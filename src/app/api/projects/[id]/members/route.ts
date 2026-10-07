@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
-import { Project } from "@/models/Project";
 import { User } from "@/models/User";
 import { requireProjectAccess } from "@/lib/access";
 import { addMemberSchema } from "@/lib/validators";
