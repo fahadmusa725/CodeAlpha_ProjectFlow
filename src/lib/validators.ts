@@ -41,7 +41,7 @@ export const updateTaskSchema = z.object({
   description: z.string().trim().max(2000, "Description must be at most 2000 characters").optional(),
   status: z.enum(["todo", "in-progress", "done"]).optional(),
   assignee: z.string().optional().nullable(),
-  order: z.number().int().min(0).optional(),
+  order: z.number().finite().min(-1_000_000).max(1_000_000).optional(),
   dueDate: z.string().datetime({ offset: true }).optional().nullable(),
 });
 
