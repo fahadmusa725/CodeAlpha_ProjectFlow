@@ -6,12 +6,15 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faRightFromBracket, faUser } from "@fortawesome/free-solid-svg-icons";
 import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui";
+import { useUser } from "@/components/UserContext";
 
 interface AppHeaderProps {
-  userName: string;
+  userName?: string;
 }
 
-export function AppHeader({ userName }: AppHeaderProps) {
+export function AppHeader({ userName: propUserName }: AppHeaderProps) {
+  const { user } = useUser();
+  const userName = propUserName || user?.name || "User";
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {

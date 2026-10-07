@@ -1,25 +1,29 @@
 import React from "react";
 
 interface TextFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label: string;
+  label?: string;
   error?: string;
-  id: string;
+  id?: string;
 }
 
 export function TextField({
   label,
   error,
-  id,
+  id: propId,
   className = "",
   ...props
 }: TextFieldProps) {
+  const generatedId = React.useId();
+  const id = propId || generatedId;
   const errorId = `${id}-error`;
 
   return (
     <div className="flex flex-col gap-1.5 w-full">
-      <label htmlFor={id} className="text-xs font-semibold text-text">
-        {label}
-      </label>
+      {label && (
+        <label htmlFor={id} className="text-xs font-semibold text-text">
+          {label}
+        </label>
+      )}
       <input
         id={id}
         aria-invalid={error ? "true" : undefined}

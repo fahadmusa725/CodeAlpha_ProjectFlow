@@ -1,6 +1,8 @@
 import React from "react";
 import { headers } from "next/headers";
 import { AppHeader } from "@/components/AppHeader";
+import { UserProvider } from "@/components/UserContext";
+import { ToastProvider } from "@/components/ui";
 import type { AuthMeResponse } from "@/types";
 
 async function getCurrentUser(): Promise<AuthMeResponse["user"] | null> {
@@ -34,11 +36,15 @@ export default async function AppLayout({
   const user = await getCurrentUser();
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <AppHeader userName={user?.name || "User"} />
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
-        {children}
-      </main>
-    </div>
+    <UserProvider user={user}>
+      <ToastProvider>
+        <div className="min-h-screen flex flex-col bg-background">
+          <AppHeader />
+          <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
+            {children}
+          </main>
+        </div>
+      </ToastProvider>
+    </UserProvider>
   );
 }

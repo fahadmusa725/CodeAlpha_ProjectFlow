@@ -49,3 +49,51 @@ export interface ProjectDetailResponse {
 export interface ApiErrorResponse {
   error: string;
 }
+
+export type TaskStatus = "todo" | "in-progress" | "done";
+
+export interface TaskUser {
+  _id: string;
+  name: string;
+  email: string;
+}
+
+export interface Task {
+  _id: string;
+  project: string;
+  title: string;
+  description?: string;
+  status: TaskStatus;
+  assignee?: TaskUser | null;
+  order: number;
+  dueDate?: string | null;
+  createdBy: TaskUser | string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Comment {
+  _id: string;
+  task: string;
+  author: TaskUser;
+  text: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface TasksListResponse {
+  tasks: Task[];
+}
+
+export interface TaskResponse {
+  task: Task;
+}
+
+export interface CommentsListResponse {
+  comments: Comment[];
+}
+
+export interface CommentResponse {
+  comment: Comment;
+}
+

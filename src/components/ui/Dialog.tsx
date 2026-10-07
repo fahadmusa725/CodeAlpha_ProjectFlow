@@ -9,9 +9,10 @@ interface DialogProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  className?: string;
 }
 
-export function Dialog({ isOpen, onClose, title, children }: DialogProps) {
+export function Dialog({ isOpen, onClose, title, children, className }: DialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -49,7 +50,9 @@ export function Dialog({ isOpen, onClose, title, children }: DialogProps) {
   return (
     <dialog
       ref={dialogRef}
-      className="backdrop:bg-black/40 rounded-[6px] border border-border bg-surface text-text p-0 shadow-lg max-w-md w-full m-auto"
+      className={`backdrop:bg-black/40 rounded-[6px] border border-border bg-surface text-text p-0 shadow-lg ${
+        className || "max-w-md w-full m-auto"
+      }`}
     >
       <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
         <h2 className="text-base font-semibold text-text">{title}</h2>

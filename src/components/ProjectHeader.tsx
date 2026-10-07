@@ -1,0 +1,139 @@
+"use client";
+
+import React, { useState } from "react";
+import Link from "next/link";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowLeft, faPenToSquare, faTrash, faUsers } from "@fortawesome/free-solid-svg-icons";
+import { Avatar } from "@/components/Avatar";
+import { MembersDialog } from "@/components/MembersDialog";
+import { EditProjectDialog, DeleteProjectDialog } from "@/components/ProjectModals";
+import type { Project } from "@/types";
+
+interface ProjectHeaderProps {
+  project: Project;
+  currentUserId?: string;
+  onProjectUpdated: (updatedProject: Project) => void;
+  onMemberRemoved: () => void;
+}
+
+export function ProjectHeader({
+  project,
+  currentUserId,
+  onProjectUpdated,
+  onMemberRemoved,
+}: ProjectHeaderProps) {
+  const [isMembersOpen, setIsMembersOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
+  const isOwner = project.owner === currentUserId;
+  const maxVisibleAvatars = 4;
+  const visibleMembers = project.members.slice(0, maxVisibleAvatars);
+  const remainingCount = project.members.length - maxVisibleAvatars;
+
+  return (
+    <div className="flex flex-col gap-4 mb-6">
+      {/* Top row: back link & owner actions */}
+      <div className="flex items-center justify-between">
+        <Link
+          href="/projects"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-text hover:text-text transition-colors"
+        >
+          <FontAwesomeIcon icon={faArrowLeft} className="w-3 h-3" />
+          Back to Projects
+        </Link>
+
+        {isOwner && (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsEditOpen(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-text hover:text-text bg-surface border border-border px-2.5 py-1 rounded-[4px] transition-colors focus-visible:outline-accent"
+              title="Edit project details"
+            >
+              <FontAwesomeIcon icon={faPenToSquare} className="w-3 h-3" />
+              Edit
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsDeleteOpen(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-danger hover:bg-danger/10 border border-danger/20 px-2.5 py-1 rounded-[4px] transition-colors focus-visible:outline-accent"
+              title="Delete project"
+            >
+              <FontAwesomeIcon icon={faTrash} className="w-3 h-3" />
+              Delete
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Main header content */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface border border-border rounded-[8px] p-5">
+        <div className="flex flex-col gap-1 max-w-2xl">
+          <h1 className="text-xl font-bold text-text tracking-tight">{project.name}</h1>
+          {project.description && (
+            <p className="text-xs text-muted-text leading-relaxed">{project.description}</p>
+          )}
+        </div>
+
+        {/* Member avatar stack */}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setIsMembersOpen(true)}
+            className="flex items-center gap-2 group cursor-pointer focus-visible:outline-accent rounded-full p-0.5"
+            title="View & manage members"
+          >
+            <div className="flex items-center -space-x-2 overflow-hidden py-1 px-1">
+              {visibleMembers.map((member) => (
+                <Avatar
+                  key={member.user._id}
+                  name={member.user.name}
+                  userId={member.user._id}
+                  size="md"
+                  className="ring-2 ring-surface transition-transform group-hover:scale-105"
+                />
+              ))}
+              {remainingCount > 0 && (
+                <div className="w-7 h-7 rounded-full bg-background border border-border text-[11px] font-semibold text-muted-text flex items-center justify-center ring-2 ring-surface">
+                  +{remainingCount}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1 text-xs text-muted-text group-hover:text-text font-medium border border-border rounded-[4px] px-2 py-1 bg-background/50">
+              <FontAwesomeIcon icon={faUsers} className="w-3 h-3" />
+              <span>Members</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* Dialogs */}
+      <MembersDialog
+        isOpen={isMembersOpen}
+        onClose={() => setIsMembersOpen(false)}
+        project={project}
+        isOwner={isOwner}
+        onProjectUpdated={onProjectUpdated}
+        onMemberRemoved={onMemberRemoved}
+      />
+
+      {isOwner && (
+        <>
+          <EditProjectDialog
+            isOpen={isEditOpen}
+            onClose={() => setIsEditOpen(false)}
+            project={project}
+            onProjectUpdated={onProjectUpdated}
+          />
+          <DeleteProjectDialog
+            isOpen={isDeleteOpen}
+            onClose={() => setIsDeleteOpen(false)}
+            project={project}
+          />
+        </>
+      )}
+    </div>
+  );
+}
