@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   try {
     await connectToDatabase();
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select("+passwordHash");
     if (!user) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }

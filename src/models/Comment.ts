@@ -18,5 +18,8 @@ const CommentSchema = new Schema<IComment>(
   { timestamps: true }
 );
 
+CommentSchema.index({ task: 1, createdAt: 1 });
+
 export const Comment: Model<IComment> =
   mongoose.models.Comment || mongoose.model<IComment>("Comment", CommentSchema);
+
