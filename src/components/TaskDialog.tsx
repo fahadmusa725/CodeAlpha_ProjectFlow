@@ -240,9 +240,9 @@ export function TaskDialog({
       isOpen={isOpen}
       onClose={onClose}
       title="Task Details"
-      className="w-full max-w-2xl max-sm:h-full max-sm:max-h-full max-sm:rounded-none max-sm:m-0 m-auto"
+      className="sm:max-w-2xl"
     >
-      <div className="flex flex-col gap-5 max-h-[80vh] overflow-y-auto pr-1 scrollbar-thin">
+      <div className="flex flex-col gap-5 pr-1 scrollbar-thin">
         {/* Title */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-text">Title</label>

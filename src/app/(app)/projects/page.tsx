@@ -144,14 +144,14 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between border-b border-border pb-4">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
+        <div className="min-w-0">
           <h1 className="text-xl font-bold tracking-tight text-text">Projects</h1>
           <p className="text-xs text-muted-text mt-0.5">
             Manage your workspace projects and team collaborations
           </p>
         </div>
-        <Button onClick={handleOpenDialog}>
+        <Button onClick={handleOpenDialog} className="shrink-0 min-h-[40px]">
           <FontAwesomeIcon icon={faPlus} className="w-3.5 h-3.5 mr-1.5" />
           New Project
         </Button>
@@ -259,18 +259,18 @@ export default function ProjectsPage() {
                     <FontAwesomeIcon icon={faCalendar} className="w-3 h-3" />
                     {formatDate(project.createdAt)}
                   </span>
-                  <div className="flex items-center -space-x-1.5">
+                  <div className="flex items-center -space-x-1">
                     {visibleMembers.map((m) => (
                       <Avatar
                         key={m.user._id}
                         name={m.user.name}
                         userId={m.user._id}
                         size="sm"
-                        className="ring-2 ring-surface"
+                        className="ring-[3px] ring-surface"
                       />
                     ))}
                     {extraCount > 0 && (
-                      <div className="w-6 h-6 rounded-full bg-background border border-border text-[10px] font-semibold text-muted-text flex items-center justify-center ring-2 ring-surface">
+                      <div className="w-6 h-6 rounded-full bg-background border border-border text-[10px] font-semibold text-muted-text flex items-center justify-center ring-[3px] ring-surface">
                         +{extraCount}
                       </div>
                     )}

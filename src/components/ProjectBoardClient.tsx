@@ -403,12 +403,12 @@ export function ProjectBoardClient({ projectId }: ProjectBoardClientProps) {
   // Render loading skeleton
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 min-w-0">
         <div className="h-28 bg-surface border border-border rounded-[8px] animate-pulse" />
         <div className="h-12 bg-surface border border-border rounded-[8px] animate-pulse" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="flex overflow-x-auto gap-4 md:grid md:grid-cols-3 pb-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-[#ECEAE4]/60 border border-border/80 rounded-[8px] p-4 h-[500px] flex flex-col gap-3 animate-pulse">
+            <div key={i} className="bg-[#ECEAE4]/60 border border-border/80 rounded-[8px] p-4 h-[500px] flex flex-col gap-3 animate-pulse w-[85vw] sm:w-auto flex-shrink-0 md:flex-shrink">
               <div className="h-6 bg-border/60 rounded w-1/3" />
               <div className="h-20 bg-surface/80 rounded-[6px]" />
               <div className="h-20 bg-surface/80 rounded-[6px]" />
@@ -462,7 +462,7 @@ export function ProjectBoardClient({ projectId }: ProjectBoardClientProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 min-w-0">
       <ProjectHeader
         project={project}
         currentUserId={user?.id}
@@ -494,7 +494,7 @@ export function ProjectBoardClient({ projectId }: ProjectBoardClientProps) {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="snap-x snap-mandatory flex overflow-x-auto gap-4 md:grid md:grid-cols-3 pb-4 scrollbar-thin">
+        <div className="snap-x snap-mandatory flex overflow-x-auto gap-4 md:grid md:grid-cols-3 pb-4 scrollbar-thin w-full min-w-0">
           {COLUMNS.map((column) => {
             const colTasks = filteredColumnsTasks[column.id];
             return (

@@ -40,7 +40,7 @@ export default async function AppLayout({
       <ToastProvider>
         <div className="min-h-screen flex flex-col bg-background">
           <AppHeader />
-          <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
+          <main className="flex-1 min-w-0 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
             {children}
           </main>
         </div>

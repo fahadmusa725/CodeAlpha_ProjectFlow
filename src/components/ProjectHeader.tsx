@@ -33,8 +33,8 @@ export function ProjectHeader({
 
   return (
     <div className="flex flex-col gap-4 mb-6">
-      {/* Top row: back link & owner actions */}
-      <div className="flex items-center justify-between">
+      {/* Top row: back link & owner actions – wrap on narrow screens */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Link
           href="/projects"
           className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-text hover:text-text transition-colors"
@@ -48,20 +48,22 @@ export function ProjectHeader({
             <button
               type="button"
               onClick={() => setIsEditOpen(true)}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-text hover:text-text bg-surface border border-border px-2.5 py-1 rounded-[4px] transition-colors focus-visible:outline-accent"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-text hover:text-text bg-surface border border-border px-2.5 min-h-[40px] sm:min-h-0 sm:py-1 rounded-[4px] transition-colors focus-visible:outline-accent"
+              aria-label="Edit project details"
               title="Edit project details"
             >
               <FontAwesomeIcon icon={faPenToSquare} className="w-3 h-3" />
-              Edit
+              <span className="hidden sm:inline">Edit</span>
             </button>
             <button
               type="button"
               onClick={() => setIsDeleteOpen(true)}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-danger hover:bg-danger/10 border border-danger/20 px-2.5 py-1 rounded-[4px] transition-colors focus-visible:outline-accent"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-danger hover:bg-danger/10 border border-danger/20 px-2.5 min-h-[40px] sm:min-h-0 sm:py-1 rounded-[4px] transition-colors focus-visible:outline-accent"
+              aria-label="Delete project"
               title="Delete project"
             >
               <FontAwesomeIcon icon={faTrash} className="w-3 h-3" />
-              Delete
+              <span className="hidden sm:inline">Delete</span>
             </button>
           </div>
         )}
@@ -69,33 +71,34 @@ export function ProjectHeader({
 
       {/* Main header content */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface border border-border rounded-[8px] p-5">
-        <div className="flex flex-col gap-1 max-w-2xl">
-          <h1 className="text-xl font-bold text-text tracking-tight">{project.name}</h1>
+        <div className="flex flex-col gap-1 min-w-0">
+          <h1 className="text-xl font-bold text-text tracking-tight break-words">{project.name}</h1>
           {project.description && (
-            <p className="text-xs text-muted-text leading-relaxed">{project.description}</p>
+            <p className="text-xs text-muted-text leading-relaxed break-words">{project.description}</p>
           )}
         </div>
 
         {/* Member avatar stack */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           <button
             type="button"
             onClick={() => setIsMembersOpen(true)}
-            className="flex items-center gap-2 group cursor-pointer focus-visible:outline-accent rounded-full p-0.5"
+            className="flex items-center gap-2 group cursor-pointer focus-visible:outline-accent rounded-full p-0.5 min-h-[40px] sm:min-h-0"
+            aria-label="View and manage members"
             title="View & manage members"
           >
-            <div className="flex items-center -space-x-2 overflow-hidden py-1 px-1">
+            <div className="flex items-center -space-x-1.5 overflow-visible py-1 px-1">
               {visibleMembers.map((member) => (
                 <Avatar
                   key={member.user._id}
                   name={member.user.name}
                   userId={member.user._id}
                   size="md"
-                  className="ring-2 ring-surface transition-transform group-hover:scale-105"
+                  className="ring-[3px] ring-surface transition-transform group-hover:scale-105"
                 />
               ))}
               {remainingCount > 0 && (
-                <div className="w-7 h-7 rounded-full bg-background border border-border text-[11px] font-semibold text-muted-text flex items-center justify-center ring-2 ring-surface">
+                <div className="w-7 h-7 rounded-full bg-background border border-border text-[11px] font-semibold text-muted-text flex items-center justify-center ring-[3px] ring-surface">
                   +{remainingCount}
                 </div>
               )}
