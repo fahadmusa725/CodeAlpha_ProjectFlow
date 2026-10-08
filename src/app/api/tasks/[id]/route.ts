@@ -6,6 +6,7 @@ import { Comment } from "@/models/Comment";
 import { Project } from "@/models/Project";
 import { getCurrentUser } from "@/lib/auth";
 import { updateTaskSchema } from "@/lib/validators";
+import { publishToProject } from "@/lib/realtime";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -93,14 +94,20 @@ export async function PATCH(req: Request, { params }: Params) {
 
     const commentCount = await Comment.countDocuments({ task: id });
     const taskObj = task.toObject();
+    const updatedTask = {
+      ...taskObj,
+      priority: taskObj.priority || "medium",
+      labels: taskObj.labels || [],
+      commentCount,
+    };
+
+    await publishToProject(ctx.project._id.toString(), "task.updated", {
+      actorId: ctx.userId,
+      task: updatedTask,
+    });
 
     return NextResponse.json({
-      task: {
-        ...taskObj,
-        priority: taskObj.priority || "medium",
-        labels: taskObj.labels || [],
-        commentCount,
-      },
+      task: updatedTask,
     });
   } catch (error) {
     console.error("PATCH /api/tasks/[id]:", error);
@@ -127,8 +134,14 @@ export async function DELETE(_req: Request, { params }: Params) {
   }
 
   try {
+    const projectId = ctx.project._id.toString();
     await Comment.deleteMany({ task: id });
     await Task.findByIdAndDelete(id);
+
+    await publishToProject(projectId, "task.deleted", {
+      actorId: ctx.userId,
+      taskId: id,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

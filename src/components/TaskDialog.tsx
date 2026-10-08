@@ -29,6 +29,8 @@ interface TaskDialogProps {
   onTaskUpdated: (updatedTask: Task) => void;
   onTaskDeleted: (taskId: string) => void;
   onCommentCountChanged: (taskId: string, delta: number) => void;
+  remoteConflict?: boolean;
+  onReloadRemote?: () => void;
 }
 
 export function TaskDialog({
@@ -42,6 +44,8 @@ export function TaskDialog({
   onTaskUpdated,
   onTaskDeleted,
   onCommentCountChanged,
+  remoteConflict,
+  onReloadRemote,
 }: TaskDialogProps) {
   const { showToast } = useToast();
 
@@ -243,6 +247,21 @@ export function TaskDialog({
       className="sm:max-w-2xl"
     >
       <div className="flex flex-col gap-5 pr-1 scrollbar-thin">
+        {remoteConflict && (
+          <div className="flex items-center justify-between gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-[6px] text-xs text-amber-600 dark:text-amber-400">
+            <span>This task was changed by someone else</span>
+            {onReloadRemote && (
+              <button
+                type="button"
+                onClick={onReloadRemote}
+                className="px-2.5 py-1 bg-amber-500 text-white rounded-[4px] font-medium hover:bg-amber-600 transition-colors"
+              >
+                Reload
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Title */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-text">Title</label>
@@ -257,11 +276,13 @@ export function TaskDialog({
         {/* Status / Priority / Assignee / Due Date */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-text flex items-center gap-1.5">
+            <label htmlFor={`task-status-${task._id}`} className="text-xs font-semibold text-text flex items-center gap-1.5">
               <FontAwesomeIcon icon={faClock} className="w-3 h-3 text-muted-text" />
               Status
             </label>
             <select
+              id={`task-status-${task._id}`}
+              name="status"
               value={status}
               onChange={(e) => setStatus(e.target.value as TaskStatus)}
               className="w-full bg-surface border border-border rounded-[4px] px-2.5 py-1.5 text-xs text-text focus-visible:outline-accent"
@@ -273,11 +294,13 @@ export function TaskDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-text flex items-center gap-1.5">
+            <label htmlFor={`task-priority-${task._id}`} className="text-xs font-semibold text-text flex items-center gap-1.5">
               <FontAwesomeIcon icon={faFlag} className="w-3 h-3 text-muted-text" />
               Priority
             </label>
             <select
+              id={`task-priority-${task._id}`}
+              name="priority"
               value={priority}
               onChange={(e) => setPriority(e.target.value as TaskPriority)}
               className="w-full bg-surface border border-border rounded-[4px] px-2.5 py-1.5 text-xs text-text focus-visible:outline-accent"
@@ -289,11 +312,13 @@ export function TaskDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-text flex items-center gap-1.5">
+            <label htmlFor={`task-assignee-${task._id}`} className="text-xs font-semibold text-text flex items-center gap-1.5">
               <FontAwesomeIcon icon={faUser} className="w-3 h-3 text-muted-text" />
               Assignee
             </label>
             <select
+              id={`task-assignee-${task._id}`}
+              name="assigneeId"
               value={assigneeId}
               onChange={(e) => setAssigneeId(e.target.value)}
               className="w-full bg-surface border border-border rounded-[4px] px-2.5 py-1.5 text-xs text-text focus-visible:outline-accent"
@@ -308,12 +333,14 @@ export function TaskDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-text flex items-center gap-1.5">
+            <label htmlFor={`task-duedate-${task._id}`} className="text-xs font-semibold text-text flex items-center gap-1.5">
               <FontAwesomeIcon icon={faCalendarDays} className="w-3 h-3 text-muted-text" />
               Due date
             </label>
             <div className="flex items-center gap-1">
               <input
+                id={`task-duedate-${task._id}`}
+                name="dueDate"
                 type="date"
                 value={dueDateStr}
                 onChange={(e) => setDueDateStr(e.target.value)}
@@ -357,6 +384,8 @@ export function TaskDialog({
             {labels.length < 5 && (
               <>
                 <input
+                  id={`task-label-input-${task._id}`}
+                  name="labelInput"
                   list={suggestionsId}
                   value={labelInput}
                   onChange={(e) => { setLabelInput(e.target.value); setLabelError(null); }}
@@ -379,8 +408,10 @@ export function TaskDialog({
 
         {/* Description */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-text">Description</label>
+          <label htmlFor={`task-desc-${task._id}`} className="text-xs font-semibold text-text">Description</label>
           <textarea
+            id={`task-desc-${task._id}`}
+            name="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
@@ -467,7 +498,12 @@ export function TaskDialog({
             </div>
           )}
           <form onSubmit={handlePostComment} className="flex flex-col gap-2 mt-2">
+            <label htmlFor={`comment-input-${task._id}`} className="sr-only">
+              Add a comment
+            </label>
             <textarea
+              id={`comment-input-${task._id}`}
+              name="commentText"
               value={newCommentText}
               onChange={(e) => setNewCommentText(e.target.value)}
               rows={2}

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import mongoose from "mongoose";
 import { requireProjectAccess } from "@/lib/access";
+import { getCurrentUser } from "@/lib/auth";
+import { publishToProject } from "@/lib/realtime";
 
 type Params = { params: Promise<{ id: string; userId: string }> };
 
@@ -34,6 +36,12 @@ export async function DELETE(_req: Request, { params }: Params) {
 
     project.members = project.members.filter((m) => m.user.toString() !== userId) as typeof project.members;
     await project.save();
+
+    const payload = await getCurrentUser();
+    await publishToProject(id, "member.removed", {
+      actorId: payload?.userId || "",
+      userId,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

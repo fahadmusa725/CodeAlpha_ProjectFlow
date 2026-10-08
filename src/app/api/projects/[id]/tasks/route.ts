@@ -6,6 +6,7 @@ import { Comment } from "@/models/Comment";
 import { requireProjectAccess } from "@/lib/access";
 import { createTaskSchema } from "@/lib/validators";
 import { getCurrentUser } from "@/lib/auth";
+import { publishToProject } from "@/lib/realtime";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -110,13 +111,20 @@ export async function POST(req: Request, { params }: Params) {
     ]);
 
     const taskObj = populated.toObject();
+    const resultTask = {
+      ...taskObj,
+      priority: taskObj.priority || "medium",
+      labels: taskObj.labels || [],
+      commentCount: 0,
+    };
+
+    await publishToProject(id, "task.created", {
+      actorId: payload.userId,
+      task: resultTask,
+    });
+
     return NextResponse.json({
-      task: {
-        ...taskObj,
-        priority: taskObj.priority || "medium",
-        labels: taskObj.labels || [],
-        commentCount: 0,
-      },
+      task: resultTask,
     }, { status: 201 });
   } catch (error) {
     console.error("POST /api/projects/[id]/tasks:", error);

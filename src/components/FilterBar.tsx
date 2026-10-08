@@ -63,6 +63,8 @@ export function FilterBar({
         />
         <input
           ref={searchRef}
+          id="filter-search-input"
+          name="search"
           type="search"
           value={filters.search}
           onChange={(e) => set({ search: e.target.value })}
@@ -76,6 +78,8 @@ export function FilterBar({
       <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
         {/* Assignee */}
         <select
+          id="filter-assignee-select"
+          name="assigneeId"
           value={filters.assigneeId}
           onChange={(e) => set({ assigneeId: e.target.value })}
           className="w-full bg-background border border-border rounded-[4px] px-2.5 py-2.5 sm:py-1.5 text-xs text-text focus-visible:outline-accent min-h-[40px] sm:min-h-0"
@@ -92,6 +96,8 @@ export function FilterBar({
 
         {/* Priority */}
         <select
+          id="filter-priority-select"
+          name="priority"
           value={filters.priority}
           onChange={(e) => set({ priority: e.target.value as BoardFilters["priority"] })}
           className="w-full bg-background border border-border rounded-[4px] px-2.5 py-2.5 sm:py-1.5 text-xs text-text focus-visible:outline-accent min-h-[40px] sm:min-h-0"
@@ -106,6 +112,8 @@ export function FilterBar({
         {/* Label */}
         {allLabels.length > 0 && (
           <select
+            id="filter-label-select"
+            name="label"
             value={filters.label}
             onChange={(e) => set({ label: e.target.value })}
             className="w-full bg-background border border-border rounded-[4px] px-2.5 py-2.5 sm:py-1.5 text-xs text-text focus-visible:outline-accent min-h-[40px] sm:min-h-0"
@@ -119,8 +127,10 @@ export function FilterBar({
         )}
 
         {/* Overdue toggle */}
-        <label className="flex items-center gap-1.5 cursor-pointer select-none text-xs font-medium text-text bg-background border border-border rounded-[4px] px-2.5 py-2.5 sm:py-1.5 min-h-[40px] sm:min-h-0">
+        <label htmlFor="filter-overdue-checkbox" className="flex items-center gap-1.5 cursor-pointer select-none text-xs font-medium text-text bg-background border border-border rounded-[4px] px-2.5 py-2.5 sm:py-1.5 min-h-[40px] sm:min-h-0">
           <input
+            id="filter-overdue-checkbox"
+            name="overdue"
             type="checkbox"
             checked={filters.overdue}
             onChange={(e) => set({ overdue: e.target.checked })}

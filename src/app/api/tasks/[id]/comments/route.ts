@@ -6,6 +6,7 @@ import { Comment } from "@/models/Comment";
 import { Project } from "@/models/Project";
 import { getCurrentUser } from "@/lib/auth";
 import { createCommentSchema } from "@/lib/validators";
+import { publishToProject } from "@/lib/realtime";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -83,6 +84,14 @@ export async function POST(req: Request, { params }: Params) {
     });
 
     const populated = await comment.populate("author", "name email");
+    const commentCount = await Comment.countDocuments({ task: id });
+
+    await publishToProject(ctx.project._id.toString(), "comment.created", {
+      actorId: ctx.userId,
+      taskId: id,
+      comment: populated,
+      commentCount,
+    });
 
     return NextResponse.json({ comment: populated }, { status: 201 });
   } catch (error) {

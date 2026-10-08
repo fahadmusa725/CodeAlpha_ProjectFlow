@@ -4,7 +4,9 @@ import { Project } from "@/models/Project";
 import { Task } from "@/models/Task";
 import { Comment } from "@/models/Comment";
 import { requireProjectAccess } from "@/lib/access";
+import { getCurrentUser } from "@/lib/auth";
 import { updateProjectSchema } from "@/lib/validators";
+import { publishToProject } from "@/lib/realtime";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -52,6 +54,15 @@ export async function PATCH(req: Request, { params }: Params) {
       "name email"
     );
 
+    if (project) {
+      const payload = await getCurrentUser();
+      await publishToProject(id, "project.updated", {
+        actorId: payload?.userId || "",
+        name: project.name,
+        description: project.description,
+      });
+    }
+
     return NextResponse.json({ project });
   } catch (error) {
     console.error("PATCH /api/projects/[id]:", error);
@@ -77,6 +88,11 @@ export async function DELETE(_req: Request, { params }: Params) {
     await Comment.deleteMany({ task: { $in: taskIds } });
     await Task.deleteMany({ project: id });
     await Project.findByIdAndDelete(id);
+
+    const payload = await getCurrentUser();
+    await publishToProject(id, "project.deleted", {
+      actorId: payload?.userId || "",
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

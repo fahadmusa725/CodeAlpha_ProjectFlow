@@ -9,11 +9,19 @@ import { MembersDialog } from "@/components/MembersDialog";
 import { EditProjectDialog, DeleteProjectDialog } from "@/components/ProjectModals";
 import type { Project } from "@/types";
 
+interface PresenceUser {
+  clientId: string;
+  name: string;
+  isCurrentUser: boolean;
+}
+
 interface ProjectHeaderProps {
   project: Project;
   currentUserId?: string;
   onProjectUpdated: (updatedProject: Project) => void;
   onMemberRemoved: () => void;
+  connectionState?: string;
+  presenceUsers?: PresenceUser[];
 }
 
 export function ProjectHeader({
@@ -21,6 +29,8 @@ export function ProjectHeader({
   currentUserId,
   onProjectUpdated,
   onMemberRemoved,
+  connectionState,
+  presenceUsers = [],
 }: ProjectHeaderProps) {
   const [isMembersOpen, setIsMembersOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -30,6 +40,12 @@ export function ProjectHeader({
   const maxVisibleAvatars = 4;
   const visibleMembers = project.members.slice(0, maxVisibleAvatars);
   const remainingCount = project.members.length - maxVisibleAvatars;
+
+  const showRealtimeIndicator = connectionState && connectionState !== "off";
+  const isLive = connectionState === "connected" || connectionState === "attached";
+
+  const visiblePresence = presenceUsers.slice(0, 4);
+  const remainingPresence = presenceUsers.length - 4;
 
   return (
     <div className="flex flex-col gap-4 mb-6">
@@ -78,8 +94,55 @@ export function ProjectHeader({
           )}
         </div>
 
-        {/* Member avatar stack */}
-        <div className="flex items-center gap-3 shrink-0">
+        {/* Member avatar stack & Presence / Connection indicator */}
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
+          {/* Connection Indicator */}
+          {showRealtimeIndicator && (
+            <div
+              className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border ${
+                isLive
+                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                  : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+              }`}
+              aria-label={`Realtime status: ${isLive ? "Live" : "Reconnecting"}`}
+              title={`Realtime status: ${isLive ? "Live" : "Reconnecting"}`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isLive ? "bg-emerald-500 animate-pulse" : "bg-amber-500 animate-ping"
+                }`}
+              />
+              <span>{isLive ? "Live" : "Reconnecting"}</span>
+            </div>
+          )}
+
+          {/* Online Presence Avatars */}
+          {visiblePresence.length > 0 && (
+            <div className="flex items-center gap-1 border-r border-border pr-3">
+              <span className="text-[11px] text-muted-text font-medium mr-1 hidden sm:inline">Online:</span>
+              <div className="flex items-center -space-x-1.5 overflow-visible py-0.5">
+                {visiblePresence.map((pUser) => (
+                  <div key={pUser.clientId} title={pUser.isCurrentUser ? `${pUser.name} (You)` : pUser.name}>
+                    <Avatar
+                      name={pUser.name}
+                      userId={pUser.clientId}
+                      size="sm"
+                      className="ring-2 ring-emerald-500 transition-transform hover:scale-110"
+                    />
+                  </div>
+                ))}
+                {remainingPresence > 0 && (
+                  <div
+                    className="w-6 h-6 rounded-full bg-background border border-border text-[10px] font-semibold text-muted-text flex items-center justify-center ring-2 ring-surface"
+                    title={`${remainingPresence} more online`}
+                  >
+                    +{remainingPresence}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={() => setIsMembersOpen(true)}

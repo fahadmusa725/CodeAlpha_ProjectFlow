@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import Ably from "ably";
+
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -21,6 +23,7 @@ import { faArrowLeft, faExclamationTriangle, faRotateRight, faXmark } from "@for
 import { apiFetch } from "@/lib/api";
 import { useUser } from "@/components/UserContext";
 import { useToast, Button } from "@/components/ui";
+import { useRealtime } from "@/components/RealtimeProvider";
 import { ProjectHeader } from "@/components/ProjectHeader";
 import { BoardColumn } from "@/components/BoardColumn";
 import { TaskCard } from "@/components/TaskCard";
@@ -102,6 +105,296 @@ export function ProjectBoardClient({ projectId }: ProjectBoardClientProps) {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
 
+  const { connectionState, getChannel, reauthorize } = useRealtime();
+
+  const [presenceUsers, setPresenceUsers] = useState<{ clientId: string; name: string; isCurrentUser: boolean }[]>([]);
+  const [remoteConflictTaskId, setRemoteConflictTaskId] = useState<string | null>(null);
+
+  // Refs for state accessed inside Ably event callbacks
+  const isDraggingRef = useRef(false);
+  const eventBufferRef = useRef<{ name: string; data: Record<string, unknown> }[]>([]);
+  const selectedTaskRef = useRef<Task | null>(null);
+  const isTaskDialogOpenRef = useRef(false);
+
+  useEffect(() => {
+    selectedTaskRef.current = selectedTask;
+  }, [selectedTask]);
+
+  useEffect(() => {
+    isTaskDialogOpenRef.current = isTaskDialogOpen;
+  }, [isTaskDialogOpen]);
+
+  // Buffer state
+  const prevConnectionStateRef = useRef(connectionState);
+
+  // Function to apply incoming realtime events
+  const applyRealtimeEvent = useCallback(
+    (eventName: string, data: Record<string, unknown>) => {
+      if (!data || data.actorId === user?.id && eventName !== "presence.update") {
+        // Echo from current user (except when presence updating) - ignore
+        if (data?.actorId === user?.id) return;
+      }
+
+      switch (eventName) {
+        case "task.created": {
+          if (data.task) {
+            const incoming = data.task as Task;
+            setTasks((prev) => {
+              if (prev.some((t) => t._id === incoming._id)) return prev;
+              return sortTasks([...prev, incoming]);
+            });
+          }
+          break;
+        }
+
+        case "task.updated": {
+          if (data.task) {
+            const incoming = data.task as Task;
+            setTasks((prev) => {
+              const existing = prev.find((t) => t._id === incoming._id);
+              if (!existing) return sortTasks([...prev, incoming]);
+
+              const existingTime = new Date(existing.updatedAt).getTime();
+              const incomingTime = new Date(incoming.updatedAt).getTime();
+
+              if (incomingTime <= existingTime) return prev; // Older or equal, ignore
+
+              // Check if dialog has unsaved edits
+              if (
+                isTaskDialogOpenRef.current &&
+                selectedTaskRef.current &&
+                selectedTaskRef.current._id === incoming._id
+              ) {
+                setRemoteConflictTaskId(incoming._id);
+                return prev;
+              }
+
+              return sortTasks(prev.map((t) => (t._id === incoming._id ? incoming : t)));
+            });
+          }
+          break;
+        }
+
+        case "task.deleted": {
+          if (data.taskId && typeof data.taskId === "string") {
+            const deletedId = data.taskId;
+            setTasks((prev) => prev.filter((t) => t._id !== deletedId));
+            if (
+              isTaskDialogOpenRef.current &&
+              selectedTaskRef.current &&
+              selectedTaskRef.current._id === deletedId
+            ) {
+              setIsTaskDialogOpen(false);
+              setSelectedTask(null);
+              showToast("Task was deleted by another user", "info");
+            }
+          }
+          break;
+        }
+
+        case "comment.created": {
+          if (data.taskId && typeof data.taskId === "string") {
+            const targetTaskId = data.taskId;
+            setTasks((prev) =>
+              prev.map((t) =>
+                t._id === targetTaskId
+                  ? { ...t, commentCount: typeof data.commentCount === "number" ? data.commentCount : (t.commentCount || 0) + 1 }
+                  : t
+              )
+            );
+          }
+          break;
+        }
+
+        case "member.added": {
+          if (data.member) {
+            const newMember = data.member as Project["members"][number];
+            setProject((prev) => {
+              if (!prev) return prev;
+              if (prev.members.some((m) => m.user._id === newMember.user._id)) return prev;
+              return { ...prev, members: [...prev.members, newMember] };
+            });
+          }
+          break;
+        }
+
+        case "member.removed": {
+          if (data.userId && typeof data.userId === "string") {
+            const removedUserId = data.userId;
+            if (removedUserId === user?.id) {
+              showToast("You were removed from this project", "error");
+              router.push("/projects");
+              return;
+            }
+            setProject((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                members: prev.members.filter((m) => m.user._id !== removedUserId),
+              };
+            });
+          }
+          break;
+        }
+
+        case "project.updated": {
+          setProject((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              name: typeof data.name === "string" ? data.name : prev.name,
+              description: typeof data.description === "string" ? data.description : prev.description,
+            };
+          });
+          break;
+        }
+
+        case "project.deleted": {
+          showToast("Project was deleted", "error");
+          router.push("/projects");
+          break;
+        }
+
+        default:
+          break;
+      }
+    },
+    [user?.id, showToast, router]
+  );
+
+  // Subscribe to channel & presence
+  useEffect(() => {
+    if (!projectId || connectionState === "off") return;
+
+    const channelName = `project:${projectId}`;
+    const channel = getChannel(channelName);
+    if (!channel) return;
+
+    let cancelled = false;
+    let attachedOnce = false;
+
+    const handleMessage = (msg: Ably.InboundMessage) => {
+      const eventName = msg.name || "";
+      const eventData = (msg.data as Record<string, unknown>) || {};
+      if (isDraggingRef.current) {
+        eventBufferRef.current.push({ name: eventName, data: eventData });
+      } else {
+        applyRealtimeEvent(eventName, eventData);
+      }
+    };
+
+    const handlePresenceChange = () => {
+      if (!cancelled) {
+        updatePresenceList();
+      }
+    };
+
+    const updatePresenceList = async () => {
+      try {
+        const members = await channel.presence.get().catch(() => null);
+        if (cancelled || !members || !project) return;
+        const onlineUsers: { clientId: string; name: string; isCurrentUser: boolean }[] = [];
+        const seenClientIds = new Set<string>();
+
+        for (const m of members) {
+          const clientId = m.clientId;
+          if (!clientId || seenClientIds.has(clientId)) continue;
+          seenClientIds.add(clientId);
+
+          // Find display name from project members
+          const projectMember = project.members.find((pm) => pm.user._id === clientId);
+          if (projectMember) {
+            onlineUsers.push({
+              clientId,
+              name: projectMember.user.name,
+              isCurrentUser: clientId === user?.id,
+            });
+          }
+        }
+        if (!cancelled) {
+          setPresenceUsers(onlineUsers);
+        }
+      } catch {}
+    };
+
+    const subscribeChannel = async () => {
+      try {
+        await channel.attach();
+        if (cancelled) return;
+        attachedOnce = true;
+
+        await channel.subscribe(handleMessage).catch(() => {});
+        if (cancelled) return;
+
+        await channel.presence.enter().catch(() => {});
+        if (cancelled) return;
+
+        await channel.presence.subscribe(["enter", "leave", "update"], handlePresenceChange).catch(() => {});
+        if (cancelled) return;
+
+        updatePresenceList();
+      } catch {
+        if (cancelled) return;
+        // Capability failure retry check
+        if (!attachedOnce) {
+          attachedOnce = true;
+          try {
+            await reauthorize().catch(() => {});
+            if (cancelled) return;
+
+            await channel.attach();
+            if (cancelled) return;
+
+            await channel.subscribe(handleMessage).catch(() => {});
+            if (cancelled) return;
+
+            await channel.presence.enter().catch(() => {});
+            if (cancelled) return;
+
+            await channel.presence.subscribe(["enter", "leave", "update"], handlePresenceChange).catch(() => {});
+            if (cancelled) return;
+
+            updatePresenceList();
+          } catch (retryErr) {
+            console.warn("Realtime attach retry failed:", retryErr);
+          }
+        }
+      }
+    };
+
+    subscribeChannel();
+
+    return () => {
+      cancelled = true;
+      channel.presence.unsubscribe(["enter", "leave", "update"], handlePresenceChange);
+      channel.unsubscribe(handleMessage);
+      channel.presence.leave().catch(() => {});
+      channel.detach().catch(() => {});
+    };
+  }, [projectId, connectionState, getChannel, reauthorize, project, user?.id, applyRealtimeEvent]);
+
+  const refetchTasks = useCallback(async () => {
+    try {
+      const tasksRes = await apiFetch<{ tasks: Task[] }>(`/api/projects/${projectId}/tasks`);
+      setTasks(sortTasks(tasksRes.tasks || []));
+    } catch (err) {
+      console.error("Failed to refetch tasks", err);
+    }
+  }, [projectId]);
+
+  // Resync on reconnection
+  useEffect(() => {
+    const wasDisconnected =
+      prevConnectionStateRef.current === "disconnected" ||
+      prevConnectionStateRef.current === "suspended";
+    const isNowConnected = connectionState === "connected";
+
+    if (wasDisconnected && isNowConnected && projectId) {
+      refetchTasks();
+    }
+    prevConnectionStateRef.current = connectionState;
+  }, [connectionState, projectId, refetchTasks]);
+
   // Filters from URL
   const filtersFromUrl = useMemo((): BoardFilters => ({
     search: searchParams.get("q") || "",
@@ -174,15 +467,6 @@ export function ProjectBoardClient({ projectId }: ProjectBoardClientProps) {
 
     load();
     return () => { ignore = true; };
-  }, [projectId]);
-
-  const refetchTasks = useCallback(async () => {
-    try {
-      const tasksRes = await apiFetch<{ tasks: Task[] }>(`/api/projects/${projectId}/tasks`);
-      setTasks(sortTasks(tasksRes.tasks || []));
-    } catch (err) {
-      console.error("Failed to refetch tasks", err);
-    }
   }, [projectId]);
 
   // Collect all labels on the board for datalist suggestions
@@ -468,6 +752,8 @@ export function ProjectBoardClient({ projectId }: ProjectBoardClientProps) {
         currentUserId={user?.id}
         onProjectUpdated={(updated) => setProject(updated)}
         onMemberRemoved={refetchTasks}
+        connectionState={connectionState}
+        presenceUsers={presenceUsers}
       />
 
       <FilterBar
@@ -535,6 +821,7 @@ export function ProjectBoardClient({ projectId }: ProjectBoardClientProps) {
         onClose={() => {
           setIsTaskDialogOpen(false);
           setSelectedTask(null);
+          setRemoteConflictTaskId(null);
         }}
         task={selectedTask}
         members={project.members}
@@ -548,6 +835,11 @@ export function ProjectBoardClient({ projectId }: ProjectBoardClientProps) {
           setTasks((prev) => prev.filter((t) => t._id !== deletedId));
         }}
         onCommentCountChanged={handleCommentCountChanged}
+        remoteConflict={selectedTask ? remoteConflictTaskId === selectedTask._id : false}
+        onReloadRemote={() => {
+          refetchTasks();
+          setRemoteConflictTaskId(null);
+        }}
       />
     </div>
   );

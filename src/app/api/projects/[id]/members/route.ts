@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { User } from "@/models/User";
 import { requireProjectAccess } from "@/lib/access";
+import { getCurrentUser } from "@/lib/auth";
 import { addMemberSchema } from "@/lib/validators";
+import { publishToProject } from "@/lib/realtime";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -47,6 +49,13 @@ export async function POST(req: Request, { params }: Params) {
     await project.save();
 
     const populated = await project.populate("members.user", "name email");
+    const addedMember = populated.members.find((m) => m.user._id.toString() === userToAdd._id.toString());
+
+    const payload = await getCurrentUser();
+    await publishToProject(id, "member.added", {
+      actorId: payload?.userId || "",
+      member: addedMember,
+    });
 
     return NextResponse.json({ project: populated }, { status: 201 });
   } catch (error) {
