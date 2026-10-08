@@ -16,12 +16,16 @@ export interface ProjectMember {
   role: "owner" | "member";
 }
 
+export type TaskPriority = "low" | "medium" | "high";
+
 export interface Project {
   _id: string;
   name: string;
   description?: string;
   owner: string;
   members: ProjectMember[];
+  taskCount?: number;
+  doneCount?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -64,6 +68,9 @@ export interface Task {
   title: string;
   description?: string;
   status: TaskStatus;
+  priority?: TaskPriority;
+  labels?: string[];
+  commentCount?: number;
   assignee?: TaskUser | null;
   order: number;
   dueDate?: string | null;

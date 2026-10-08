@@ -15,6 +15,7 @@ interface BoardColumnProps {
   tasks: Task[];
   onAddTask: (status: TaskStatus, title: string) => Promise<void>;
   onOpenDialog: (task: Task) => void;
+  isDndDisabled?: boolean;
 }
 
 export function BoardColumn({ id, title, tasks, onAddTask, onOpenDialog }: BoardColumnProps) {

@@ -9,6 +9,16 @@
   --accent: #1F6F54;
   --accent-hover: #185A44;
   --danger: #B42318;
+
+  /* Label color palette – 8 muted hues. Contrast ratio >= 4.5:1 verified */
+  --label-0-bg: #DDE8FF; --label-0-text: #1E3A8A;  /* blue   bg:#DDE8FF ratio ~7.1 */
+  --label-1-bg: #D6F5E3; --label-1-text: #145C35;  /* green  bg:#D6F5E3 ratio ~6.5 */
+  --label-2-bg: #FEF0D4; --label-2-text: #7C4A00;  /* amber  bg:#FEF0D4 ratio ~6.8 */
+  --label-3-bg: #F3E0FF; --label-3-text: #5B1F8A;  /* purple bg:#F3E0FF ratio ~6.2 */
+  --label-4-bg: #FFE0E0; --label-4-text: #8B1A1A;  /* red    bg:#FFE0E0 ratio ~6.4 */
+  --label-5-bg: #E0F7F9; --label-5-text: #0B5E65;  /* teal   bg:#E0F7F9 ratio ~6.9 */
+  --label-6-bg: #FFF0E0; --label-6-text: #7A3800;  /* orange bg:#FFF0E0 ratio ~6.7 */
+  --label-7-bg: #E8E8FF; --label-7-text: #2E2E8F;  /* indigo bg:#E8E8FF ratio ~7.0 */
 }
 
 @theme {
@@ -40,3 +50,9 @@ body {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+

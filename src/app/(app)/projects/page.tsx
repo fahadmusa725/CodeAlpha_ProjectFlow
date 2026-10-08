@@ -6,11 +6,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPlus,
   faFolderOpen,
-  faUsers,
   faRotateRight,
   faCalendar,
 } from "@fortawesome/free-solid-svg-icons";
 import { Button, TextField, Dialog, Spinner } from "@/components/ui";
+import { Avatar } from "@/components/Avatar";
 import { apiFetch, ApiError } from "@/lib/api";
 import type { ProjectsListResponse, ProjectDetailResponse, Project } from "@/types";
 
@@ -190,13 +190,17 @@ export default function ProjectsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {projects.map((project) => {
             const role = getUserRole(project);
-            const memberCount = project.members.length;
+            const taskCount = project.taskCount ?? 0;
+            const doneCount = project.doneCount ?? 0;
+            const progressPct = taskCount > 0 ? Math.round((doneCount / taskCount) * 100) : 0;
+            const visibleMembers = project.members.slice(0, 4);
+            const extraCount = project.members.length - visibleMembers.length;
 
             return (
               <Link
                 key={project._id}
                 href={`/projects/${project._id}`}
-                className="group border border-border rounded-[6px] bg-surface p-4 flex flex-col justify-between hover:border-accent/50 transition-colors focus-visible:outline-2 focus-visible:outline-accent"
+                className="group border border-border rounded-[6px] bg-surface p-4 flex flex-col gap-3 hover:border-accent/50 transition-colors focus-visible:outline-2 focus-visible:outline-accent"
               >
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
@@ -204,7 +208,7 @@ export default function ProjectsPage() {
                       {project.name}
                     </h2>
                     <span
-                      className={`text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-[4px] border ${
+                      className={`text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-[4px] border flex-shrink-0 ${
                         role === "owner"
                           ? "bg-accent/10 border-accent/20 text-accent"
                           : "bg-background border-border text-muted-text"
@@ -214,25 +218,63 @@ export default function ProjectsPage() {
                     </span>
                   </div>
                   {project.description ? (
-                    <p className="text-xs text-muted-text line-clamp-2">
-                      {project.description}
-                    </p>
+                    <p className="text-xs text-muted-text line-clamp-2">{project.description}</p>
                   ) : (
-                    <p className="text-xs text-muted-text italic">
-                      No description provided
-                    </p>
+                    <p className="text-xs text-muted-text italic">No description provided</p>
                   )}
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-muted-text border-t border-border pt-3 mt-4">
-                  <span className="flex items-center gap-1">
-                    <FontAwesomeIcon icon={faUsers} className="w-3 h-3" />
-                    {memberCount} {memberCount === 1 ? "member" : "members"}
-                  </span>
+                {/* Task progress */}
+                <div className="flex flex-col gap-1.5">
+                  {taskCount === 0 ? (
+                    <p className="text-xs text-muted-text italic">No tasks yet</p>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-text">
+                          {doneCount} of {taskCount} tasks done
+                        </span>
+                        <span className="text-xs font-medium text-text">{progressPct}%</span>
+                      </div>
+                      <div
+                        role="progressbar"
+                        aria-valuenow={progressPct}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-label={`${doneCount} of ${taskCount} tasks done`}
+                        className="h-1.5 bg-border rounded-full overflow-hidden"
+                      >
+                        <div
+                          className="h-full bg-accent rounded-full transition-all"
+                          style={{ width: `${progressPct}%` }}
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Footer: date + member avatars */}
+                <div className="flex items-center justify-between text-xs text-muted-text border-t border-border pt-2">
                   <span className="flex items-center gap-1">
                     <FontAwesomeIcon icon={faCalendar} className="w-3 h-3" />
                     {formatDate(project.createdAt)}
                   </span>
+                  <div className="flex items-center -space-x-1.5">
+                    {visibleMembers.map((m) => (
+                      <Avatar
+                        key={m.user._id}
+                        name={m.user.name}
+                        userId={m.user._id}
+                        size="sm"
+                        className="ring-2 ring-surface"
+                      />
+                    ))}
+                    {extraCount > 0 && (
+                      <div className="w-6 h-6 rounded-full bg-background border border-border text-[10px] font-semibold text-muted-text flex items-center justify-center ring-2 ring-surface">
+                        +{extraCount}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </Link>
             );
