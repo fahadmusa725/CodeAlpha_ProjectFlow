@@ -87,7 +87,21 @@ export async function PATCH(req: Request, { params }: Params) {
       .populate("assignee", "name email")
       .populate("createdBy", "name email");
 
-    return NextResponse.json({ task });
+    if (!task) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    const commentCount = await Comment.countDocuments({ task: id });
+    const taskObj = task.toObject();
+
+    return NextResponse.json({
+      task: {
+        ...taskObj,
+        priority: taskObj.priority || "medium",
+        labels: taskObj.labels || [],
+        commentCount,
+      },
+    });
   } catch (error) {
     console.error("PATCH /api/tasks/[id]:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

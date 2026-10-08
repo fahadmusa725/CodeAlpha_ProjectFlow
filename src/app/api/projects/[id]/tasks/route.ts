@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { connectToDatabase } from "@/lib/db";
 import { Task } from "@/models/Task";
+import { Comment } from "@/models/Comment";
 import { requireProjectAccess } from "@/lib/access";
 import { createTaskSchema } from "@/lib/validators";
 import { getCurrentUser } from "@/lib/auth";
@@ -21,7 +22,29 @@ export async function GET(_req: Request, { params }: Params) {
       .populate("createdBy", "name email")
       .sort({ status: 1, order: 1 });
 
-    return NextResponse.json({ tasks });
+    const taskIds = tasks.map((t) => t._id);
+
+    const commentCounts = await Comment.aggregate([
+      { $match: { task: { $in: taskIds } } },
+      { $group: { _id: "$task", count: { $sum: 1 } } },
+    ]);
+
+    const commentCountMap = new Map<string, number>();
+    for (const item of commentCounts) {
+      commentCountMap.set(item._id.toString(), item.count);
+    }
+
+    const tasksWithCounts = tasks.map((t) => {
+      const obj = t.toObject();
+      return {
+        ...obj,
+        priority: obj.priority || "medium",
+        labels: obj.labels || [],
+        commentCount: commentCountMap.get(t._id.toString()) || 0,
+      };
+    });
+
+    return NextResponse.json({ tasks: tasksWithCounts });
   } catch (error) {
     console.error("GET /api/projects/[id]/tasks:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -50,7 +73,7 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ error: "Validation failed", details: parsed.error.format() }, { status: 400 });
   }
 
-  const { title, description, status = "todo", assignee, dueDate } = parsed.data;
+  const { title, description, status = "todo", priority = "medium", labels = [], assignee, dueDate } = parsed.data;
 
   if (assignee !== undefined && assignee !== null) {
     if (!mongoose.isValidObjectId(assignee)) {
@@ -73,6 +96,8 @@ export async function POST(req: Request, { params }: Params) {
       title,
       description: description ?? "",
       status,
+      priority,
+      labels,
       assignee: assignee ?? undefined,
       order,
       dueDate: dueDate ? new Date(dueDate) : undefined,
@@ -84,7 +109,15 @@ export async function POST(req: Request, { params }: Params) {
       { path: "createdBy", select: "name email" },
     ]);
 
-    return NextResponse.json({ task: populated }, { status: 201 });
+    const taskObj = populated.toObject();
+    return NextResponse.json({
+      task: {
+        ...taskObj,
+        priority: taskObj.priority || "medium",
+        labels: taskObj.labels || [],
+        commentCount: 0,
+      },
+    }, { status: 201 });
   } catch (error) {
     console.error("POST /api/projects/[id]/tasks:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

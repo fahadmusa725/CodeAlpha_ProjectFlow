@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { Project } from "@/models/Project";
+import { Task } from "@/models/Task";
 import { getCurrentUser } from "@/lib/auth";
 import { createProjectSchema } from "@/lib/validators";
 
@@ -17,7 +18,40 @@ export async function GET() {
       .populate("members.user", "name email")
       .sort({ createdAt: -1 });
 
-    return NextResponse.json({ projects });
+    const projectIds = projects.map((p) => p._id);
+
+    const taskStats = await Task.aggregate([
+      { $match: { project: { $in: projectIds } } },
+      {
+        $group: {
+          _id: "$project",
+          taskCount: { $sum: 1 },
+          doneCount: {
+            $sum: { $cond: [{ $eq: ["$status", "done"] }, 1, 0] },
+          },
+        },
+      },
+    ]);
+
+    const statsMap = new Map<string, { taskCount: number; doneCount: number }>();
+    for (const stat of taskStats) {
+      statsMap.set(stat._id.toString(), {
+        taskCount: stat.taskCount,
+        doneCount: stat.doneCount,
+      });
+    }
+
+    const projectsWithCounts = projects.map((p) => {
+      const obj = p.toObject();
+      const stat = statsMap.get(p._id.toString()) || { taskCount: 0, doneCount: 0 };
+      return {
+        ...obj,
+        taskCount: stat.taskCount,
+        doneCount: stat.doneCount,
+      };
+    });
+
+    return NextResponse.json({ projects: projectsWithCounts });
   } catch (error) {
     console.error("GET /api/projects:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

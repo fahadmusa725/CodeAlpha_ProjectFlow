@@ -28,10 +28,28 @@ export const addMemberSchema = z.object({
   email: z.string().trim().toLowerCase().email("Invalid email address").max(254, "Email must be at most 254 characters"),
 });
 
+const labelsSchema = z
+  .array(z.string().trim().min(1, "Label cannot be empty").max(24, "Label must be at most 24 characters"))
+  .max(5, "At most 5 labels allowed")
+  .transform((arr) => {
+    const seen = new Set<string>();
+    const result: string[] = [];
+    for (const item of arr) {
+      const lower = item.toLowerCase();
+      if (!seen.has(lower)) {
+        seen.add(lower);
+        result.push(item);
+      }
+    }
+    return result;
+  });
+
 export const createTaskSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(200, "Title must be at most 200 characters"),
   description: z.string().trim().max(2000, "Description must be at most 2000 characters").optional(),
   status: z.enum(["todo", "in-progress", "done"]).optional(),
+  priority: z.enum(["low", "medium", "high"]).optional(),
+  labels: labelsSchema.optional(),
   assignee: z.string().optional().nullable(),
   dueDate: z.string().datetime({ offset: true }).optional().nullable(),
 });
@@ -40,6 +58,8 @@ export const updateTaskSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(200, "Title must be at most 200 characters").optional(),
   description: z.string().trim().max(2000, "Description must be at most 2000 characters").optional(),
   status: z.enum(["todo", "in-progress", "done"]).optional(),
+  priority: z.enum(["low", "medium", "high"]).optional(),
+  labels: labelsSchema.optional(),
   assignee: z.string().optional().nullable(),
   order: z.number().finite().min(-1_000_000).max(1_000_000).optional(),
   dueDate: z.string().datetime({ offset: true }).optional().nullable(),

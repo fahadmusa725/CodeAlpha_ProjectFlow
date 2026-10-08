@@ -6,6 +6,8 @@ export interface ITask extends Document {
   title: string;
   description?: string;
   status: "todo" | "in-progress" | "done";
+  priority: "low" | "medium" | "high";
+  labels: string[];
   assignee?: mongoose.Types.ObjectId;
   order: number;
   dueDate?: Date;
@@ -20,6 +22,8 @@ const TaskSchema = new Schema<ITask>(
     title: { type: String, required: true, trim: true },
     description: { type: String, default: "" },
     status: { type: String, enum: ["todo", "in-progress", "done"], default: "todo" },
+    priority: { type: String, enum: ["low", "medium", "high"], default: "medium" },
+    labels: { type: [String], default: [] },
     assignee: { type: Schema.Types.ObjectId, ref: "User" },
     order: { type: Number, required: true, default: 0 },
     dueDate: { type: Date },
