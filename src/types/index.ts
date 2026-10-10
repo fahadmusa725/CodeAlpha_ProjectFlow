@@ -74,6 +74,7 @@ export interface Task {
   assignee?: TaskUser | null;
   order: number;
   dueDate?: string | null;
+  completedAt?: string;
   createdBy: TaskUser | string;
   createdAt: string;
   updatedAt: string;

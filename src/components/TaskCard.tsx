@@ -39,6 +39,11 @@ export function LabelChip({ label }: { label: string }) {
   );
 }
 
+export function isTaskOverdue(task: Task): boolean {
+  if (!task.dueDate || task.status === "done") return false;
+  return new Date(task.dueDate) < new Date();
+}
+
 export function TaskCard({ task, onOpenDialog, isOverlay = false }: TaskCardProps) {
   const {
     attributes,
@@ -58,10 +63,7 @@ export function TaskCard({ task, onOpenDialog, isOverlay = false }: TaskCardProp
     opacity: isDragging ? 0.3 : 1,
   };
 
-  const isTaskOverdue = React.useMemo(() => {
-    if (!task.dueDate || task.status === "done") return false;
-    return new Date(task.dueDate) < new Date();
-  }, [task.dueDate, task.status]);
+  const overdue = React.useMemo(() => isTaskOverdue(task), [task]);
 
   const formattedDueDate = React.useMemo(() => {
     if (!task.dueDate) return null;
@@ -147,12 +149,12 @@ export function TaskCard({ task, onOpenDialog, isOverlay = false }: TaskCardProp
             {formattedDueDate && (
               <div
                 className={`flex items-center gap-1 font-medium ${
-                  isTaskOverdue ? "text-danger" : "text-muted-text"
+                  overdue ? "text-danger" : "text-muted-text"
                 }`}
               >
                 <FontAwesomeIcon icon={faCalendarDays} className="w-3 h-3 flex-shrink-0" />
                 <span>{formattedDueDate}</span>
-                {isTaskOverdue && (
+                {overdue && (
                   <span className="bg-danger/10 text-danger text-[10px] font-semibold px-1 py-0.5 rounded">
                     Overdue
                   </span>

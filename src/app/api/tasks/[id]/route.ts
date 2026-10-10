@@ -84,6 +84,14 @@ export async function PATCH(req: Request, { params }: Params) {
       $set.dueDate = new Date(dueDate);
     }
 
+    if (parsed.data.status !== undefined) {
+      if (ctx.task.status !== "done" && parsed.data.status === "done") {
+        $set.completedAt = new Date();
+      } else if (ctx.task.status === "done" && parsed.data.status !== "done") {
+        $unset.completedAt = 1;
+      }
+    }
+
     const mongoUpdate: Record<string, unknown> = { $set };
     if (Object.keys($unset).length > 0) mongoUpdate.$unset = $unset;
 

@@ -11,6 +11,7 @@ export interface ITask extends Document {
   assignee?: mongoose.Types.ObjectId;
   order: number;
   dueDate?: Date;
+  completedAt?: Date;
   createdBy: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -27,6 +28,7 @@ const TaskSchema = new Schema<ITask>(
     assignee: { type: Schema.Types.ObjectId, ref: "User" },
     order: { type: Number, required: true, default: 0 },
     dueDate: { type: Date },
+    completedAt: { type: Date },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true }

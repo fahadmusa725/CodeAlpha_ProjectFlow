@@ -104,6 +104,7 @@ export async function POST(req: Request, { params }: Params) {
       assignee: assignee ?? undefined,
       order,
       dueDate: dueDate ? new Date(dueDate) : undefined,
+      completedAt: status === "done" ? new Date() : undefined,
       createdBy: payload.userId,
     });
 

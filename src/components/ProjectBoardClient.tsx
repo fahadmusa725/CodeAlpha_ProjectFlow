@@ -26,9 +26,10 @@ import { useToast, Button } from "@/components/ui";
 import { useRealtime } from "@/components/RealtimeProvider";
 import { ProjectHeader } from "@/components/ProjectHeader";
 import { BoardColumn } from "@/components/BoardColumn";
-import { TaskCard } from "@/components/TaskCard";
+import { TaskCard, isTaskOverdue } from "@/components/TaskCard";
 import { TaskDialog } from "@/components/TaskDialog";
 import { FilterBar, type BoardFilters } from "@/components/FilterBar";
+import { DashboardView } from "@/components/dashboard/DashboardView";
 import type { Project, Task, TaskStatus } from "@/types";
 
 interface ProjectBoardClientProps {
@@ -82,8 +83,7 @@ function applyFilters(tasks: Task[], f: BoardFilters): Task[] {
       if ((t.priority || "medium") !== f.priority) return false;
     }
     if (f.overdue) {
-      if (!t.dueDate || t.status === "done") return false;
-      if (new Date(t.dueDate) >= new Date()) return false;
+      if (!isTaskOverdue(t)) return false;
     }
     return true;
   });
@@ -126,6 +126,47 @@ export function ProjectBoardClient({ projectId }: ProjectBoardClientProps) {
 
   // Buffer state
   const prevConnectionStateRef = useRef(connectionState);
+
+  // View switch refs and handlers (must live here, before any early returns)
+  const boardTabRef = useRef<HTMLButtonElement>(null);
+  const dashboardTabRef = useRef<HTMLButtonElement>(null);
+
+  const handleViewChange = useCallback(
+    (view: "board" | "dashboard") => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (view === "dashboard") {
+        params.set("view", "dashboard");
+      } else {
+        params.delete("view");
+      }
+      const qs = params.toString();
+      router.replace(`/projects/${projectId}${qs ? `?${qs}` : ""}`, { scroll: false });
+    },
+    [projectId, router, searchParams]
+  );
+
+  const handleTabKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        handleViewChange("dashboard");
+        dashboardTabRef.current?.focus();
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        handleViewChange("board");
+        boardTabRef.current?.focus();
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        handleViewChange("board");
+        boardTabRef.current?.focus();
+      } else if (e.key === "End") {
+        e.preventDefault();
+        handleViewChange("dashboard");
+        dashboardTabRef.current?.focus();
+      }
+    },
+    [handleViewChange]
+  );
 
   // Function to apply incoming realtime events
   const applyRealtimeEvent = useCallback(
@@ -776,6 +817,8 @@ export function ProjectBoardClient({ projectId }: ProjectBoardClientProps) {
     );
   }
 
+  const activeView = searchParams.get("view") === "dashboard" ? "dashboard" : "board";
+
   return (
     <div className="space-y-4 min-w-0">
       <ProjectHeader
@@ -787,63 +830,116 @@ export function ProjectBoardClient({ projectId }: ProjectBoardClientProps) {
         presenceUsers={presenceUsers}
       />
 
-      <FilterBar
-        filters={filters}
-        onChange={handleFiltersChange}
-        members={project.members}
-        allLabels={allLabels}
-        visibleCount={visibleCount}
-        totalCount={tasks.length}
-        filtersActive={filtersActive}
-        onClear={handleClearFilters}
-      />
-
-      {filtersActive && (
-        <p className="text-xs text-muted-text text-center py-0.5">
-          Drag and drop is disabled while filters are active. Clear filters to reorder cards.
-        </p>
-      )}
-
-      <DndContext
-        id="project-board-dnd"
-        sensors={sensors}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
+      {/* View Switch Tabs */}
+      <div
+        role="tablist"
+        aria-label="Project view mode"
+        className="flex items-center gap-1 border-b border-border pb-1"
       >
-        <div className="snap-x snap-mandatory flex overflow-x-auto gap-4 md:grid md:grid-cols-3 pb-4 scrollbar-thin w-full min-w-0">
-          {COLUMNS.map((column) => {
-            const colTasks = filteredColumnsTasks[column.id];
-            return (
-              <BoardColumn
-                key={column.id}
-                id={column.id}
-                title={column.title}
-                tasks={colTasks}
-                onAddTask={handleAddTask}
-                onOpenDialog={handleOpenTaskDialog}
-                isDndDisabled={filtersActive}
-              />
-            );
-          })}
-        </div>
+        <button
+          ref={boardTabRef}
+          id="tab-board"
+          role="tab"
+          type="button"
+          aria-selected={activeView === "board"}
+          aria-controls="panel-board"
+          tabIndex={activeView === "board" ? 0 : -1}
+          onClick={() => handleViewChange("board")}
+          onKeyDown={handleTabKeyDown}
+          className={`px-3.5 py-1.5 text-xs font-semibold rounded-[4px] transition-colors focus-visible:outline-accent ${
+            activeView === "board"
+              ? "bg-accent text-white"
+              : "text-muted-text hover:text-text hover:bg-background"
+          }`}
+        >
+          Board
+        </button>
+        <button
+          ref={dashboardTabRef}
+          id="tab-dashboard"
+          role="tab"
+          type="button"
+          aria-selected={activeView === "dashboard"}
+          aria-controls="panel-dashboard"
+          tabIndex={activeView === "dashboard" ? 0 : -1}
+          onClick={() => handleViewChange("dashboard")}
+          onKeyDown={handleTabKeyDown}
+          className={`px-3.5 py-1.5 text-xs font-semibold rounded-[4px] transition-colors focus-visible:outline-accent ${
+            activeView === "dashboard"
+              ? "bg-accent text-white"
+              : "text-muted-text hover:text-text hover:bg-background"
+          }`}
+        >
+          Dashboard
+        </button>
+      </div>
 
-        <DragOverlay>
-          {activeTask ? <TaskCard task={activeTask} isOverlay /> : null}
-        </DragOverlay>
-      </DndContext>
+      {/* Tab Panels */}
+      {activeView === "board" ? (
+        <div id="panel-board" role="tabpanel" aria-labelledby="tab-board" className="space-y-4 min-w-0">
+          <FilterBar
+            filters={filters}
+            onChange={handleFiltersChange}
+            members={project.members}
+            allLabels={allLabels}
+            visibleCount={visibleCount}
+            totalCount={tasks.length}
+            filtersActive={filtersActive}
+            onClear={handleClearFilters}
+          />
 
-      {filtersActive && visibleCount === 0 && (
-        <div className="border border-dashed border-border rounded-[8px] py-12 text-center space-y-3">
-          <p className="text-sm font-semibold text-text">No tasks match the current filters</p>
-          <button
-            type="button"
-            onClick={handleClearFilters}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline"
+          {filtersActive && (
+            <p className="text-xs text-muted-text text-center py-0.5">
+              Drag and drop is disabled while filters are active. Clear filters to reorder cards.
+            </p>
+          )}
+
+          <DndContext
+            id="project-board-dnd"
+            sensors={sensors}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
           >
-            <FontAwesomeIcon icon={faXmark} className="w-3 h-3" />
-            Clear filters
-          </button>
+            <div className="snap-x snap-mandatory flex overflow-x-auto gap-4 md:grid md:grid-cols-3 pb-4 scrollbar-thin w-full min-w-0">
+              {COLUMNS.map((column) => {
+                const colTasks = filteredColumnsTasks[column.id];
+                return (
+                  <BoardColumn
+                    key={column.id}
+                    id={column.id}
+                    title={column.title}
+                    tasks={colTasks}
+                    onAddTask={handleAddTask}
+                    onOpenDialog={handleOpenTaskDialog}
+                    isDndDisabled={filtersActive}
+                  />
+                );
+              })}
+            </div>
+
+            <DragOverlay>
+              {activeTask ? <TaskCard task={activeTask} isOverlay /> : null}
+            </DragOverlay>
+          </DndContext>
+
+          {filtersActive && visibleCount === 0 && (
+            <div className="border border-dashed border-border rounded-[8px] py-12 text-center space-y-3">
+              <p className="text-sm font-semibold text-text">No tasks match the current filters</p>
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline"
+              >
+                <FontAwesomeIcon icon={faXmark} className="w-3 h-3" />
+                Clear filters
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div id="panel-dashboard" role="tabpanel" aria-labelledby="tab-dashboard" className="min-w-0">
+          <DashboardView project={project} tasks={tasks} />
         </div>
       )}
 
