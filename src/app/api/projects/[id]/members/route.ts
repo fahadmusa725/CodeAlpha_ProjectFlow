@@ -5,6 +5,7 @@ import { requireProjectAccess } from "@/lib/access";
 import { getCurrentUser } from "@/lib/auth";
 import { addMemberSchema } from "@/lib/validators";
 import { publishToProject } from "@/lib/realtime";
+import { createNotifications } from "@/lib/notifications";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -56,6 +57,24 @@ export async function POST(req: Request, { params }: Params) {
       actorId: payload?.userId || "",
       member: addedMember,
     });
+
+    if (payload?.userId && userToAdd._id.toString() !== payload.userId) {
+      try {
+        const actorUser = await User.findById(payload.userId, "name");
+        await createNotifications([
+          {
+            user: userToAdd._id.toString(),
+            actor: payload.userId,
+            type: "added_to_project",
+            project: id,
+            actorName: actorUser?.name || "Someone",
+            targetTitle: project.name,
+          },
+        ]);
+      } catch (err) {
+        console.error("Failed to create added_to_project notification:", err);
+      }
+    }
 
     return NextResponse.json({ project: populated }, { status: 201 });
   } catch (error) {

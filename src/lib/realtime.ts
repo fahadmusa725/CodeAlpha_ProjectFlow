@@ -36,3 +36,25 @@ export async function publishToProject(
     console.error(`Failed to publish realtime event "${eventName}" to project "${projectId}":`, error instanceof Error ? error.message : "Unknown error");
   }
 }
+
+export async function publishToUser(
+  userId: string,
+  eventName: string,
+  data: Record<string, unknown>
+): Promise<void> {
+  const client = getAblyRest();
+  if (!client) return;
+
+  try {
+    const channel = client.channels.get(`user:${userId}`);
+    const publishPromise = channel.publish(eventName, data);
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Ably publish timeout after 3s")), 3000)
+    );
+    await Promise.race([publishPromise, timeoutPromise]);
+  } catch (error) {
+    // Log error cleanly without leaking credentials/API keys
+    console.error(`Failed to publish realtime event "${eventName}" to user "${userId}":`, error instanceof Error ? error.message : "Unknown error");
+  }
+}
+

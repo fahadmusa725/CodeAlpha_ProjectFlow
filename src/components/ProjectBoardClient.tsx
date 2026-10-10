@@ -469,6 +469,37 @@ export function ProjectBoardClient({ projectId }: ProjectBoardClientProps) {
     return () => { ignore = true; };
   }, [projectId]);
 
+  // Deep link handling for ?task=<id>
+  const deepLinkHandledRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (isLoading || tasks.length === 0) return;
+
+    const taskId = searchParams.get("task");
+    if (!taskId) {
+      deepLinkHandledRef.current = null;
+      return;
+    }
+
+    if (deepLinkHandledRef.current === taskId) return;
+    deepLinkHandledRef.current = taskId;
+
+    const targetTask = tasks.find((t) => t._id === taskId);
+    if (targetTask) {
+      setTimeout(() => {
+        setSelectedTask(targetTask);
+        setIsTaskDialogOpen(true);
+      }, 0);
+    } else {
+      showToast("Task not found", "error");
+    }
+
+    // Remove only 'task' param from URL keeping other filter params
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("task");
+    const qs = params.toString();
+    router.replace(`/projects/${projectId}${qs ? `?${qs}` : ""}`, { scroll: false });
+  }, [isLoading, tasks, searchParams, projectId, router, showToast]);
+
   // Collect all labels on the board for datalist suggestions
   const allLabels = useMemo(() => {
     const set = new Set<string>();

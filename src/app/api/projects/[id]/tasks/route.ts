@@ -7,6 +7,8 @@ import { requireProjectAccess } from "@/lib/access";
 import { createTaskSchema } from "@/lib/validators";
 import { getCurrentUser } from "@/lib/auth";
 import { publishToProject } from "@/lib/realtime";
+import { User } from "@/models/User";
+import { createNotifications } from "@/lib/notifications";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -122,6 +124,25 @@ export async function POST(req: Request, { params }: Params) {
       actorId: payload.userId,
       task: resultTask,
     });
+
+    if (assignee && assignee !== payload.userId) {
+      try {
+        const actorUser = await User.findById(payload.userId, "name");
+        await createNotifications([
+          {
+            user: assignee,
+            actor: payload.userId,
+            type: "assigned",
+            project: id,
+            task: resultTask._id.toString(),
+            actorName: actorUser?.name || "Someone",
+            targetTitle: title,
+          },
+        ]);
+      } catch (err) {
+        console.error("Failed to create assigned notification on task create:", err);
+      }
+    }
 
     return NextResponse.json({
       task: resultTask,

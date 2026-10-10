@@ -7,6 +7,8 @@ import { Project } from "@/models/Project";
 import { getCurrentUser } from "@/lib/auth";
 import { createCommentSchema } from "@/lib/validators";
 import { publishToProject } from "@/lib/realtime";
+import { User } from "@/models/User";
+import { createNotifications } from "@/lib/notifications";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -92,6 +94,34 @@ export async function POST(req: Request, { params }: Params) {
       comment: populated,
       commentCount,
     });
+
+    try {
+      const candidates: string[] = [];
+      if (ctx.task.createdBy) candidates.push(ctx.task.createdBy.toString());
+      if (ctx.task.assignee) candidates.push(ctx.task.assignee.toString());
+
+      const memberUserIds = new Set(ctx.project.members.map((m) => m.user.toString()));
+
+      const recipients = Array.from(new Set(candidates)).filter(
+        (userId) => userId !== ctx.userId && memberUserIds.has(userId)
+      );
+
+      if (recipients.length > 0) {
+        const actorUser = await User.findById(ctx.userId, "name");
+        const items = recipients.map((userId) => ({
+          user: userId,
+          actor: ctx.userId,
+          type: "comment" as const,
+          project: ctx.project._id.toString(),
+          task: id,
+          actorName: actorUser?.name || "Someone",
+          targetTitle: ctx.task.title,
+        }));
+        await createNotifications(items);
+      }
+    } catch (err) {
+      console.error("Failed to create comment notification:", err);
+    }
 
     return NextResponse.json({ comment: populated }, { status: 201 });
   } catch (error) {

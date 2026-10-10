@@ -4,6 +4,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { UserProvider } from "@/components/UserContext";
 import { ToastProvider } from "@/components/ui";
 import { RealtimeProvider } from "@/components/RealtimeProvider";
+import { NotificationsProvider } from "@/components/NotificationsProvider";
 import type { AuthMeResponse } from "@/types";
 
 async function getCurrentUser(): Promise<AuthMeResponse["user"] | null> {
@@ -40,12 +41,14 @@ export default async function AppLayout({
     <UserProvider user={user}>
       <ToastProvider>
         <RealtimeProvider>
-          <div className="min-h-screen flex flex-col bg-background">
-            <AppHeader />
-            <main className="flex-1 min-w-0 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
-              {children}
-            </main>
-          </div>
+          <NotificationsProvider>
+            <div className="min-h-screen flex flex-col bg-background">
+              <AppHeader />
+              <main className="flex-1 min-w-0 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
+                {children}
+              </main>
+            </div>
+          </NotificationsProvider>
         </RealtimeProvider>
       </ToastProvider>
     </UserProvider>

@@ -3,6 +3,7 @@ import { connectToDatabase } from "@/lib/db";
 import { Project } from "@/models/Project";
 import { Task } from "@/models/Task";
 import { Comment } from "@/models/Comment";
+import { Notification } from "@/models/Notification";
 import { requireProjectAccess } from "@/lib/access";
 import { getCurrentUser } from "@/lib/auth";
 import { updateProjectSchema } from "@/lib/validators";
@@ -87,6 +88,7 @@ export async function DELETE(_req: Request, { params }: Params) {
 
     await Comment.deleteMany({ task: { $in: taskIds } });
     await Task.deleteMany({ project: id });
+    await Notification.deleteMany({ project: id });
     await Project.findByIdAndDelete(id);
 
     const payload = await getCurrentUser();

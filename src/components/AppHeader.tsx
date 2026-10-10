@@ -7,6 +7,7 @@ import { faRightFromBracket, faUser } from "@fortawesome/free-solid-svg-icons";
 import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui";
 import { useUser } from "@/components/UserContext";
+import { NotificationBell } from "@/components/NotificationBell";
 
 interface AppHeaderProps {
   userName?: string;
@@ -47,6 +48,8 @@ export function AppHeader({ userName: propUserName }: AppHeaderProps) {
         </div>
 
         <div className="flex items-center gap-2 min-w-0">
+          <NotificationBell />
+
           {/* User pill: initials only on narrow screens, full name from sm */}
           <div
             className="flex items-center gap-2 text-xs font-medium text-text bg-background border border-border px-2 sm:px-2.5 py-1 rounded-[4px] min-w-0"

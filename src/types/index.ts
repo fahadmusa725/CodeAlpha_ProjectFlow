@@ -104,3 +104,23 @@ export interface CommentResponse {
   comment: Comment;
 }
 
+export interface AppNotification {
+  _id: string;
+  user: string;
+  actor: {
+    _id: string;
+    name: string;
+  } | null;
+  type: "assigned" | "comment" | "added_to_project";
+  project: string;
+  task?: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface NotificationsListResponse {
+  notifications: AppNotification[];
+  unreadCount: number;
+}
+

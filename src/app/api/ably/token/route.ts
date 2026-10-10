@@ -35,7 +35,9 @@ export async function GET() {
       .sort({ createdAt: -1 })
       .limit(50);
 
-    const capability: Record<string, string[]> = {};
+    const capability: Record<string, string[]> = {
+      [`user:${payload.userId}`]: ["subscribe"],
+    };
     for (const proj of projects) {
       capability[`project:${proj._id.toString()}`] = ["subscribe", "presence"];
     }

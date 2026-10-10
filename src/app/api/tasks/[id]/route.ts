@@ -7,6 +7,9 @@ import { Project } from "@/models/Project";
 import { getCurrentUser } from "@/lib/auth";
 import { updateTaskSchema } from "@/lib/validators";
 import { publishToProject } from "@/lib/realtime";
+import { User } from "@/models/User";
+import { Notification } from "@/models/Notification";
+import { createNotifications } from "@/lib/notifications";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -106,6 +109,29 @@ export async function PATCH(req: Request, { params }: Params) {
       task: updatedTask,
     });
 
+    if (assignee !== undefined && assignee !== null) {
+      const oldAssigneeStr = ctx.task.assignee ? ctx.task.assignee.toString() : null;
+      const newAssigneeStr = assignee.toString();
+      if (newAssigneeStr !== oldAssigneeStr && newAssigneeStr !== ctx.userId) {
+        try {
+          const actorUser = await User.findById(ctx.userId, "name");
+          await createNotifications([
+            {
+              user: newAssigneeStr,
+              actor: ctx.userId,
+              type: "assigned",
+              project: ctx.project._id.toString(),
+              task: id,
+              actorName: actorUser?.name || "Someone",
+              targetTitle: updatedTask.title,
+            },
+          ]);
+        } catch (err) {
+          console.error("Failed to create assigned notification on task update:", err);
+        }
+      }
+    }
+
     return NextResponse.json({
       task: updatedTask,
     });
@@ -136,6 +162,7 @@ export async function DELETE(_req: Request, { params }: Params) {
   try {
     const projectId = ctx.project._id.toString();
     await Comment.deleteMany({ task: id });
+    await Notification.deleteMany({ task: id });
     await Task.findByIdAndDelete(id);
 
     await publishToProject(projectId, "task.deleted", {
