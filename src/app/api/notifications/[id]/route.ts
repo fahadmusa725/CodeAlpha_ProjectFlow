@@ -25,17 +25,14 @@ export async function PATCH(_req: Request, { params }: Params) {
   try {
     await connectToDatabase();
 
-    const notification = await Notification.findOne({
-      _id: id,
-      user: payload.userId,
-    });
+    const result = await Notification.updateOne(
+      { _id: id, user: payload.userId },
+      { read: true }
+    );
 
-    if (!notification) {
+    if (result.matchedCount === 0) {
       return makeNotFoundResponse();
     }
-
-    notification.read = true;
-    await notification.save();
 
     return NextResponse.json({ success: true });
   } catch (error) {

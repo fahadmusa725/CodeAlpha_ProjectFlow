@@ -29,7 +29,7 @@ const NotificationsContext = createContext<NotificationsContextType>({
 
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
   const { user } = useUser();
-  const { connectionState, getChannel } = useRealtime();
+  const { connectionState, realtimeClient, getChannel } = useRealtime();
 
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
@@ -85,8 +85,12 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   }, [connectionState, fetchNotifications]);
 
   // Realtime subscription setup
+  // realtimeClient is listed as a dependency so this effect re-runs once
+  // RealtimeProvider finishes its async token fetch and sets the client.
+  // Without it the effect fires on mount while the client is still null,
+  // getChannel returns null, and the subscription never happens.
   useEffect(() => {
-    if (!user) return;
+    if (!user || !realtimeClient) return;
     let isCancelled = false;
 
     const channelName = `user:${user.id}`;
@@ -112,13 +116,21 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
 
     channel
       .subscribe("notification.created", handleNotificationCreated)
-      .catch(() => {});
+      .catch((err: unknown) => {
+        if (isCancelled) return;
+        if (process.env.NODE_ENV !== "production") {
+          console.warn(
+            "[NotificationsProvider] user channel subscribe failed:",
+            err instanceof Error ? err.message : err
+          );
+        }
+      });
 
     return () => {
       isCancelled = true;
       channel.unsubscribe("notification.created", handleNotificationCreated);
     };
-  }, [user, getChannel]);
+  }, [user, realtimeClient, getChannel]);
 
   const markAsRead = useCallback(async (id: string) => {
     // Optimistic update
