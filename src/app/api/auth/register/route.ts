@@ -4,6 +4,7 @@ import { connectToDatabase } from "@/lib/db";
 import { User } from "@/models/User";
 import { registerSchema } from "@/lib/validators";
 import { signToken, setAuthCookie } from "@/lib/auth";
+import { hit, getClientIp, tooManyRequests } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
   try {
@@ -15,6 +16,14 @@ export async function POST(req: Request) {
         { error: "Validation failed", details: parsed.error.format() },
         { status: 400 }
       );
+    }
+
+    // Rate limiting: 1 hour window (3,600,000 ms), max 5 per IP
+    const clientIp = getClientIp(req);
+    const ipKey = `register:ip:${clientIp}`;
+    const ipLimit = await hit(ipKey, 5, 60 * 60 * 1000);
+    if (ipLimit.limited) {
+      return tooManyRequests(ipLimit.retryAfterSeconds);
     }
 
     const { name, email, password } = parsed.data;
