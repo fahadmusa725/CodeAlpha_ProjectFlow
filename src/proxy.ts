@@ -11,6 +11,12 @@ const publicRoutes = [
 ];
 
 function isPublic(pathname: string): boolean {
+  if (pathname === "/") {
+    return true;
+  }
+  if (pathname.startsWith("/screens/")) {
+    return true;
+  }
   return publicRoutes.some(
     (route) => pathname === route || pathname.startsWith(route + "/")
   );
@@ -30,8 +36,8 @@ export async function proxy(req: NextRequest) {
     }
   }
 
-  if (isValidToken && (pathname === "/login" || pathname === "/register")) {
-    return NextResponse.redirect(new URL("/", req.url));
+  if (isValidToken && (pathname === "/" || pathname === "/login" || pathname === "/register")) {
+    return NextResponse.redirect(new URL("/projects", req.url));
   }
 
   if (isPublic(pathname)) {
