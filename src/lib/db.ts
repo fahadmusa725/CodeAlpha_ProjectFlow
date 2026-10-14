@@ -1,5 +1,12 @@
 import mongoose from "mongoose";
 
+import "@/models/User";
+import "@/models/Project";
+import "@/models/Task";
+import "@/models/Comment";
+import "@/models/Notification";
+import "@/models/RateLimit";
+
 interface MongooseCache {
   conn: typeof mongoose | null;
   promise: Promise<typeof mongoose> | null;
