@@ -158,7 +158,7 @@ export function DeleteProjectDialog({ isOpen, onClose, project }: DeleteProjectD
             disabled={!isConfirmed || isDeleting}
             isLoading={isDeleting}
             size="sm"
-            className="bg-danger hover:bg-danger/90 text-white border-transparent"
+            className="bg-danger hover:bg-danger-hover text-on-accent border-transparent"
           >
             Delete Project
           </Button>

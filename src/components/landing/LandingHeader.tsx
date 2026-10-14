@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function LandingHeader() {
   return (
@@ -11,7 +12,7 @@ export function LandingHeader() {
           ProjectFlow
         </Link>
 
-        <nav aria-label="Main navigation" className="flex items-center gap-4 sm:gap-6">
+        <nav aria-label="Main navigation" className="flex items-center gap-2 sm:gap-4">
           <a
             href="#features"
             className="hidden sm:inline-flex items-center text-sm font-medium text-muted-text hover:text-text transition-colors min-h-[40px] px-2"
@@ -26,10 +27,11 @@ export function LandingHeader() {
           </Link>
           <Link
             href="/register"
-            className="inline-flex items-center justify-center text-sm font-medium text-white bg-accent hover:bg-accent-hover rounded-[4px] px-3.5 min-h-[40px] transition-colors focus-visible:outline-2 focus-visible:outline-accent"
+            className="inline-flex items-center justify-center text-sm font-medium text-on-accent bg-accent hover:bg-accent-hover rounded-[4px] px-3.5 min-h-[40px] transition-colors focus-visible:outline-2 focus-visible:outline-accent"
           >
             Create account
           </Link>
+          <ThemeToggle />
         </nav>
       </div>
     </header>

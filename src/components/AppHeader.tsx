@@ -8,6 +8,7 @@ import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui";
 import { useUser } from "@/components/UserContext";
 import { NotificationBell } from "@/components/NotificationBell";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface AppHeaderProps {
   userName?: string;
@@ -48,6 +49,7 @@ export function AppHeader({ userName: propUserName }: AppHeaderProps) {
         </div>
 
         <div className="flex items-center gap-2 min-w-0">
+          <ThemeToggle />
           <NotificationBell />
 
           {/* User pill: initials only on narrow screens, full name from sm */}

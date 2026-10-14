@@ -60,7 +60,7 @@ export function BoardColumn({ id, title, tasks, onAddTask, onOpenDialog }: Board
   return (
     <div
       ref={setNodeRef}
-      className="bg-[#ECEAE4] border border-border/80 rounded-[8px] p-3 flex flex-col h-full min-h-[500px] w-[85vw] sm:w-auto max-w-[350px] sm:max-w-none flex-shrink-0 snap-center"
+      className="bg-column-bg border border-border/80 rounded-[8px] p-3 flex flex-col h-full min-h-[500px] w-[85vw] sm:w-auto max-w-[350px] sm:max-w-none flex-shrink-0 snap-center"
     >
       <div className="flex items-center justify-between pb-3 px-1 mb-1 border-b border-border/60">
         <div className="flex items-center gap-2">

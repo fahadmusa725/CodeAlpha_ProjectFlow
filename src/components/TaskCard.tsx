@@ -27,7 +27,7 @@ export function LabelChip({ label }: { label: string }) {
   const idx = getLabelColorIndex(label);
   return (
     <span
-      className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-[3px] border border-black/[0.08] max-w-[80px] truncate leading-tight"
+      className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-[3px] border border-border max-w-[80px] truncate leading-tight"
       style={{
         backgroundColor: `var(--label-${idx}-bg)`,
         color: `var(--label-${idx}-text)`,

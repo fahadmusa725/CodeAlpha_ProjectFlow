@@ -124,7 +124,7 @@ export function NotificationBell() {
       >
         <FontAwesomeIcon icon={faBell} className="w-4 h-4 text-muted-text" />
         {badgeText && (
-          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-accent text-white text-[10px] font-bold flex items-center justify-center leading-none pointer-events-none">
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-accent text-on-accent text-[10px] font-bold flex items-center justify-center leading-none pointer-events-none">
             {badgeText}
           </span>
         )}

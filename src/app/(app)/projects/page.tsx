@@ -316,7 +316,7 @@ export default function ProjectsPage() {
               onChange={(e) => setNewProjectDesc(e.target.value)}
               placeholder="Briefly describe the purpose of this project..."
               maxLength={500}
-              className="w-full px-3 py-1.5 text-sm bg-white border border-border rounded-[4px] text-text placeholder:text-muted-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent resize-none"
+              className="w-full px-3 py-1.5 text-sm bg-surface border border-border rounded-[4px] text-text placeholder:text-muted-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent resize-none"
             />
             <span className="text-[10px] text-muted-text text-right">
               {newProjectDesc.length}/500

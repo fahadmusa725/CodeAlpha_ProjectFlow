@@ -38,7 +38,7 @@ export function TextField({
           type={inputType}
           aria-invalid={error ? "true" : undefined}
           aria-describedby={error ? errorId : undefined}
-          className={`w-full px-3 py-1.5 text-sm bg-white border border-border rounded-[4px] text-text placeholder:text-muted-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 disabled:bg-background ${
+          className={`w-full px-3 py-1.5 text-sm bg-surface border border-border rounded-[4px] text-text placeholder:text-muted-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 disabled:bg-background ${
             isPasswordType ? "pr-10" : ""
           } ${
             error ? "border-danger focus:border-danger focus:ring-danger" : ""

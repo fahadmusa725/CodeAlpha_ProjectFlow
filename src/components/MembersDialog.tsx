@@ -153,7 +153,7 @@ export function MembersDialog({
                           type="button"
                           onClick={() => handleRemoveMember(member.user._id)}
                           disabled={removingUserId === member.user._id}
-                          className="text-xs bg-danger text-white px-2 py-0.5 rounded font-medium hover:opacity-90 disabled:opacity-50"
+                          className="text-xs bg-danger text-on-accent px-2 py-0.5 rounded font-medium hover:opacity-90 disabled:opacity-50"
                         >
                           {removingUserId === member.user._id ? "..." : "Confirm"}
                         </button>

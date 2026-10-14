@@ -28,11 +28,11 @@ export function Button({
 
   const variantStyles = {
     primary:
-      "bg-accent text-white hover:bg-accent-hover focus-visible:outline-accent",
+      "bg-accent text-on-accent hover:bg-accent-hover focus-visible:outline-accent",
     secondary:
-      "bg-white text-text border border-border hover:bg-background focus-visible:outline-text",
+      "bg-surface text-text border border-border hover:bg-background focus-visible:outline-text",
     danger:
-      "bg-danger text-white hover:bg-[#991B1B] focus-visible:outline-danger",
+      "bg-danger text-on-accent hover:bg-danger-hover focus-visible:outline-danger",
   };
 
   return (

@@ -764,7 +764,7 @@ export function ProjectBoardClient({ projectId }: ProjectBoardClientProps) {
         <div className="h-12 bg-surface border border-border rounded-[8px] animate-pulse" />
         <div className="flex overflow-x-auto gap-4 md:grid md:grid-cols-3 pb-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-[#ECEAE4]/60 border border-border/80 rounded-[8px] p-4 h-[500px] flex flex-col gap-3 animate-pulse w-[85vw] sm:w-auto flex-shrink-0 md:flex-shrink">
+            <div key={i} className="bg-column-bg/60 border border-border/80 rounded-[8px] p-4 h-[500px] flex flex-col gap-3 animate-pulse w-[85vw] sm:w-auto flex-shrink-0 md:flex-shrink">
               <div className="h-6 bg-border/60 rounded w-1/3" />
               <div className="h-20 bg-surface/80 rounded-[6px]" />
               <div className="h-20 bg-surface/80 rounded-[6px]" />
@@ -793,7 +793,7 @@ export function ProjectBoardClient({ projectId }: ProjectBoardClientProps) {
             </p>
           </div>
           <div className="pt-2">
-            <Link href="/projects" className="inline-flex items-center justify-center font-medium text-xs rounded-[4px] px-3.5 py-1.5 bg-accent text-white hover:bg-accent-hover transition-colors">
+            <Link href="/projects" className="inline-flex items-center justify-center font-medium text-xs rounded-[4px] px-3.5 py-1.5 bg-accent text-on-accent hover:bg-accent-hover transition-colors">
               Return to Projects List
             </Link>
           </div>
@@ -848,7 +848,7 @@ export function ProjectBoardClient({ projectId }: ProjectBoardClientProps) {
           onKeyDown={handleTabKeyDown}
           className={`px-3.5 py-1.5 text-xs font-semibold rounded-[4px] transition-colors focus-visible:outline-accent ${
             activeView === "board"
-              ? "bg-accent text-white"
+              ? "bg-accent text-on-accent"
               : "text-muted-text hover:text-text hover:bg-background"
           }`}
         >
@@ -866,7 +866,7 @@ export function ProjectBoardClient({ projectId }: ProjectBoardClientProps) {
           onKeyDown={handleTabKeyDown}
           className={`px-3.5 py-1.5 text-xs font-semibold rounded-[4px] transition-colors focus-visible:outline-accent ${
             activeView === "dashboard"
-              ? "bg-accent text-white"
+              ? "bg-accent text-on-accent"
               : "text-muted-text hover:text-text hover:bg-background"
           }`}
         >

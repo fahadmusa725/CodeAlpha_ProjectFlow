@@ -430,7 +430,7 @@ export function TaskDialog({
                   type="button"
                   onClick={handleDeleteTask}
                   disabled={isDeleting}
-                  className="text-xs bg-danger text-white px-2.5 py-1 rounded font-medium hover:opacity-90 disabled:opacity-50"
+                  className="text-xs bg-danger text-on-accent px-2.5 py-1 rounded font-medium hover:opacity-90 disabled:opacity-50"
                 >
                   {isDeleting ? "Deleting..." : "Confirm"}
                 </button>

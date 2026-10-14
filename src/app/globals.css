@@ -1,14 +1,19 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: light;
+
   --background: #F7F6F3;
   --surface: #FFFFFF;
+  --column-bg: #ECEAE4;
   --border: #E4E2DC;
   --text: #1C1B18;
   --muted-text: #6B6860;
   --accent: #1F6F54;
   --accent-hover: #185A44;
+  --on-accent: #FFFFFF;
   --danger: #B42318;
+  --danger-hover: #991B1B;
 
   /* Label color palette – 8 muted hues. Contrast ratio >= 4.5:1 verified */
   --label-0-bg: #DDE8FF; --label-0-text: #1E3A8A;  /* blue   bg:#DDE8FF ratio ~7.1 */
@@ -19,17 +24,127 @@
   --label-5-bg: #E0F7F9; --label-5-text: #0B5E65;  /* teal   bg:#E0F7F9 ratio ~6.9 */
   --label-6-bg: #FFF0E0; --label-6-text: #7A3800;  /* orange bg:#FFF0E0 ratio ~6.7 */
   --label-7-bg: #E8E8FF; --label-7-text: #2E2E8F;  /* indigo bg:#E8E8FF ratio ~7.0 */
+
+  /* Avatar palettes (7 pairs) */
+  --avatar-0-bg: #E0E7FF; --avatar-0-text: #3730A3;
+  --avatar-1-bg: #FEF3C7; --avatar-1-text: #92400E;
+  --avatar-2-bg: #D1FAE5; --avatar-2-text: #065F46;
+  --avatar-3-bg: #FCE7F3; --avatar-3-text: #9D174D;
+  --avatar-4-bg: #E0F2FE; --avatar-4-text: #075985;
+  --avatar-5-bg: #F3E8FF; --avatar-5-text: #6B21A8;
+  --avatar-6-bg: #FFEDD5; --avatar-6-text: #9A3412;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --background: #F7F6F3;
+  --surface: #FFFFFF;
+  --column-bg: #ECEAE4;
+  --border: #E4E2DC;
+  --text: #1C1B18;
+  --muted-text: #6B6860;
+  --accent: #1F6F54;
+  --accent-hover: #185A44;
+  --on-accent: #FFFFFF;
+  --danger: #B42318;
+  --danger-hover: #991B1B;
+
+  --label-0-bg: #DDE8FF; --label-0-text: #1E3A8A;
+  --label-1-bg: #D6F5E3; --label-1-text: #145C35;
+  --label-2-bg: #FEF0D4; --label-2-text: #7C4A00;
+  --label-3-bg: #F3E0FF; --label-3-text: #5B1F8A;
+  --label-4-bg: #FFE0E0; --label-4-text: #8B1A1A;
+  --label-5-bg: #E0F7F9; --label-5-text: #0B5E65;
+  --label-6-bg: #FFF0E0; --label-6-text: #7A3800;
+  --label-7-bg: #E8E8FF; --label-7-text: #2E2E8F;
+
+  --avatar-0-bg: #E0E7FF; --avatar-0-text: #3730A3;
+  --avatar-1-bg: #FEF3C7; --avatar-1-text: #92400E;
+  --avatar-2-bg: #D1FAE5; --avatar-2-text: #065F46;
+  --avatar-3-bg: #FCE7F3; --avatar-3-text: #9D174D;
+  --avatar-4-bg: #E0F2FE; --avatar-4-text: #075985;
+  --avatar-5-bg: #F3E8FF; --avatar-5-text: #6B21A8;
+  --avatar-6-bg: #FFEDD5; --avatar-6-text: #9A3412;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #141412;
+  --surface: #1D1C19;
+  --column-bg: #191816;
+  --border: #34322C;
+  --text: #EDEBE5;
+  --muted-text: #A8A399;
+  --accent: #3DAA82;
+  --accent-hover: #4FBE94;
+  --on-accent: #0E1A14;
+  --danger: #F0776B;
+  --danger-hover: #F89B92;
+
+  --label-0-bg: #1E293B; --label-0-text: #93C5FD;
+  --label-1-bg: #142E1F; --label-1-text: #86EFAC;
+  --label-2-bg: #2D220C; --label-2-text: #FDE047;
+  --label-3-bg: #2A1A3A; --label-3-text: #D8B4FE;
+  --label-4-bg: #331818; --label-4-text: #FCA5A5;
+  --label-5-bg: #132B2B; --label-5-text: #5EEAD4;
+  --label-6-bg: #301E10; --label-6-text: #FDBA74;
+  --label-7-bg: #20203D; --label-7-text: #C7D2FE;
+
+  --avatar-0-bg: #252B48; --avatar-0-text: #C7D2FE;
+  --avatar-1-bg: #332612; --avatar-1-text: #FDE047;
+  --avatar-2-bg: #143324; --avatar-2-text: #86EFAC;
+  --avatar-3-bg: #381628; --avatar-3-text: #F9A8D4;
+  --avatar-4-bg: #102B3F; --avatar-4-text: #7DD3FC;
+  --avatar-5-bg: #2B163B; --avatar-5-text: #D8B4FE;
+  --avatar-6-bg: #382012; --avatar-6-text: #FDBA74;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --background: #141412;
+    --surface: #1D1C19;
+    --column-bg: #191816;
+    --border: #34322C;
+    --text: #EDEBE5;
+    --muted-text: #A8A399;
+    --accent: #3DAA82;
+    --accent-hover: #4FBE94;
+    --on-accent: #0E1A14;
+    --danger: #F0776B;
+    --danger-hover: #F89B92;
+
+    --label-0-bg: #1E293B; --label-0-text: #93C5FD;
+    --label-1-bg: #142E1F; --label-1-text: #86EFAC;
+    --label-2-bg: #2D220C; --label-2-text: #FDE047;
+    --label-3-bg: #2A1A3A; --label-3-text: #D8B4FE;
+    --label-4-bg: #331818; --label-4-text: #FCA5A5;
+    --label-5-bg: #132B2B; --label-5-text: #5EEAD4;
+    --label-6-bg: #301E10; --label-6-text: #FDBA74;
+    --label-7-bg: #20203D; --label-7-text: #C7D2FE;
+
+    --avatar-0-bg: #252B48; --avatar-0-text: #C7D2FE;
+    --avatar-1-bg: #332612; --avatar-1-text: #FDE047;
+    --avatar-2-bg: #143324; --avatar-2-text: #86EFAC;
+    --avatar-3-bg: #381628; --avatar-3-text: #F9A8D4;
+    --avatar-4-bg: #102B3F; --avatar-4-text: #7DD3FC;
+    --avatar-5-bg: #2B163B; --avatar-5-text: #D8B4FE;
+    --avatar-6-bg: #382012; --avatar-6-text: #FDBA74;
+  }
 }
 
 @theme {
   --color-background: var(--background);
   --color-surface: var(--surface);
+  --color-column-bg: var(--column-bg);
   --color-border: var(--border);
   --color-text: var(--text);
   --color-muted-text: var(--muted-text);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
+  --color-on-accent: var(--on-accent);
   --color-danger: var(--danger);
+  --color-danger-hover: var(--danger-hover);
   --font-sans: var(--font-ibm-plex-sans), system-ui, sans-serif;
 }
 

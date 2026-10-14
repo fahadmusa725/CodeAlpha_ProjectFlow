@@ -9,15 +9,7 @@ interface AvatarProps {
   className?: string;
 }
 
-const PALETTE = [
-  { bg: "#E0E7FF", text: "#3730A3" },
-  { bg: "#FEF3C7", text: "#92400E" },
-  { bg: "#D1FAE5", text: "#065F46" },
-  { bg: "#FCE7F3", text: "#9D174D" },
-  { bg: "#E0F2FE", text: "#075985" },
-  { bg: "#F3E8FF", text: "#6B21A8" },
-  { bg: "#FFEDD5", text: "#9A3412" },
-];
+const PALETTE_COUNT = 7;
 
 export function getInitials(name: string): string {
   if (!name) return "?";
@@ -36,8 +28,7 @@ export function Avatar({ name, userId, size = "md", className = "" }: AvatarProp
   for (let i = 0; i < key.length; i++) {
     hash = key.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const colorIndex = Math.abs(hash) % PALETTE.length;
-  const { bg, text } = PALETTE[colorIndex];
+  const colorIndex = Math.abs(hash) % PALETTE_COUNT;
 
   const sizeClasses = {
     sm: "w-6 h-6 text-[10px]",
@@ -47,8 +38,11 @@ export function Avatar({ name, userId, size = "md", className = "" }: AvatarProp
 
   return (
     <div
-      className={`inline-flex items-center justify-center rounded-full font-semibold border border-black/10 select-none ${sizeClasses} ${className}`}
-      style={{ backgroundColor: bg, color: text }}
+      className={`inline-flex items-center justify-center rounded-full font-semibold border border-border select-none ${sizeClasses} ${className}`}
+      style={{
+        backgroundColor: `var(--avatar-${colorIndex}-bg)`,
+        color: `var(--avatar-${colorIndex}-text)`,
+      }}
       title={name}
     >
       {initials}

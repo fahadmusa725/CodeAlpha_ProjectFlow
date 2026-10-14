@@ -83,6 +83,7 @@ npm run seed
 - Hand-designed layout using IBM Plex Sans typography and neutral palette
 - Accessible semantic landmarks and WCAG AA contrast ratios
 - Fully responsive layout supporting viewports down to 360px width
+- Theme switch supporting System, Light, and Dark modes with persistent choice and instant load
 - Skip-to-content keyboard navigation link
 
 ## Screenshots
@@ -326,7 +327,6 @@ npm run build
 - **Fixed-window rate limiting**: Requests made right before the window reset can allow a burst of traffic at window boundaries.
 - **No email notifications**: Notifications are delivered exclusively in-app via WebSockets and database records; no external email service is integrated.
 - **No file attachments**: Tasks and comments support text only; file upload and attachment storage are not implemented.
-- **Light theme only**: The interface is designed exclusively with a light color palette; dark mode is not supported.
 
 ## Author
 

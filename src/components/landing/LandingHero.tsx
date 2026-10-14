@@ -15,7 +15,7 @@ export function LandingHero() {
           <div className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3">
             <Link
               href="/register"
-              className="inline-flex items-center justify-center text-sm font-medium text-white bg-accent hover:bg-accent-hover rounded-[4px] px-5 min-h-[40px] transition-colors focus-visible:outline-2 focus-visible:outline-accent"
+              className="inline-flex items-center justify-center text-sm font-medium text-on-accent bg-accent hover:bg-accent-hover rounded-[4px] px-5 min-h-[40px] transition-colors focus-visible:outline-2 focus-visible:outline-accent"
             >
               Create account
             </Link>
