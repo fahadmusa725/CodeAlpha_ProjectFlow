@@ -10,8 +10,18 @@ import {
 
 type ThemeMode = "system" | "light" | "dark";
 
+function getCookieTheme(): ThemeMode {
+  if (typeof document === "undefined") return "system";
+  const match = document.cookie.match(/(?:^|;\s*)theme=([^;]*)/);
+  const val = match ? decodeURIComponent(match[1]) : null;
+  if (val === "light" || val === "dark") {
+    return val;
+  }
+  return "system";
+}
+
 function subscribeTheme(callback: () => void): () => void {
-  window.addEventListener("storage", callback);
+  window.addEventListener("theme-change", callback);
   const media = window.matchMedia("(prefers-color-scheme: dark)");
   if (media.addEventListener) {
     media.addEventListener("change", callback);
@@ -20,7 +30,7 @@ function subscribeTheme(callback: () => void): () => void {
   }
 
   return () => {
-    window.removeEventListener("storage", callback);
+    window.removeEventListener("theme-change", callback);
     if (media.removeEventListener) {
       media.removeEventListener("change", callback);
     } else {
@@ -30,15 +40,7 @@ function subscribeTheme(callback: () => void): () => void {
 }
 
 function getThemeSnapshot(): ThemeMode {
-  try {
-    const val = localStorage.getItem("theme");
-    if (val === "light" || val === "dark") {
-      return val;
-    }
-    return "system";
-  } catch {
-    return "system";
-  }
+  return getCookieTheme();
 }
 
 function getServerSnapshot(): ThemeMode {
@@ -57,23 +59,15 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
     const nextTheme: ThemeMode =
       theme === "system" ? "light" : theme === "light" ? "dark" : "system";
 
-    try {
-      if (nextTheme === "system") {
-        localStorage.removeItem("theme");
-        document.documentElement.removeAttribute("data-theme");
-      } else {
-        localStorage.setItem("theme", nextTheme);
-        document.documentElement.setAttribute("data-theme", nextTheme);
-      }
-    } catch {
-      if (nextTheme === "system") {
-        document.documentElement.removeAttribute("data-theme");
-      } else {
-        document.documentElement.setAttribute("data-theme", nextTheme);
-      }
+    if (nextTheme === "system") {
+      document.cookie = "theme=; path=/; max-age=0; SameSite=Lax";
+      document.documentElement.removeAttribute("data-theme");
+    } else {
+      document.cookie = `theme=${nextTheme}; path=/; max-age=31536000; SameSite=Lax`;
+      document.documentElement.setAttribute("data-theme", nextTheme);
     }
 
-    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("theme-change"));
   };
 
   const getAriaLabel = () => {
@@ -102,3 +96,4 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
     </button>
   );
 }
+
