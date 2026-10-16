@@ -46,6 +46,14 @@ export function AppHeader({ userName: propUserName }: AppHeaderProps) {
             <span className="w-2 h-2 rounded-full bg-accent inline-block"></span>
             ProjectFlow
           </Link>
+          {user?.isAdmin && (
+            <Link
+              href="/admin"
+              className="text-xs font-semibold text-muted-text hover:text-text px-2 py-1 rounded-[4px] border border-border hover:bg-background transition-colors"
+            >
+              Admin
+            </Link>
+          )}
         </div>
 
         <div className="flex items-center gap-2 min-w-0">
