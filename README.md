@@ -83,8 +83,12 @@ npm run seed
 - Hand-designed layout using IBM Plex Sans typography and neutral palette
 - Accessible semantic landmarks and WCAG AA contrast ratios
 - Fully responsive layout supporting viewports down to 360px width
-- Theme switch supporting System, Light, and Dark modes with persistent choice and instant load
+- Theme switch supporting System, Light, and Dark modes (choice stored in a cookie, no flash on load)
 - Skip-to-content keyboard navigation link
+
+### Administration
+- Read-only admin area displaying users, projects, and platform activity counts
+- Accessible only to emails listed in the ADMIN_EMAILS environment variable (all other users receive a 404 response)
 
 ## Screenshots
 
@@ -100,7 +104,8 @@ npm run seed
 ### Frontend
 - **Framework**: Next.js 16.4.0 (App Router)
 - **Library**: React 19.3.0
-- **Styling**: Tailwind CSS 4 with custom CSS variables
+- **Styling**: Tailwind CSS 4 built through PostCSS (`@tailwindcss/postcss`) with custom CSS variables
+- **Typography**: Self-hosted IBM Plex Sans fonts via `next/font/local` (WOFF2 font files in `src/fonts/`)
 - **Drag and Drop**: `@dnd-kit/core` and `@dnd-kit/sortable`
 - **Icons**: Font Awesome (`@fortawesome/react-fontawesome`)
 - **Charts**: Custom SVG implementations rendered directly in React components without a third-party charting library
@@ -116,6 +121,7 @@ npm run seed
 - **Realtime Service**: Ably 2.29.0 for WebSocket pub/sub and presence
 
 ### Tooling
+- **Bundler**: Webpack (invoked via `next dev --webpack` and `next build --webpack`)
 - **Linter**: ESLint 9 (`eslint-config-next`)
 - **Type Checker**: TypeScript Compiler (`tsc`)
 - **Script Runner**: `tsx` for running seed scripts with Node `--env-file`
@@ -140,6 +146,12 @@ When a task is assigned, a comment is posted, or a user is added to a project, t
 ### Rate limiting
 Because serverless functions run across isolated ephemeral instances without shared memory, rate limiting is backed by MongoDB via the `RateLimit` collection. Each check performs an atomic `findOneAndUpdate` with `upsert: true` on fixed time windows. If a window document exists and has not expired, its hit counter increments; otherwise, a new window document is created. A unique index on the key prevents race conditions, and a MongoDB TTL index on `expiresAt` automatically cleans up expired counters. If database access fails, the limiter fails open and logs the issue so legitimate users are not locked out.
 
+### Theme
+The root layout reads the `theme` cookie on the server and applies the `data-theme` attribute to the `html` element when the value is explicitly `light` or `dark`. When no cookie is present (System), the `data-theme` attribute remains unset and CSS follows `prefers-color-scheme` through a media query with no JavaScript required. The client-side theme toggle updates `document.cookie` (`path=/`, `max-age=31536000`, `SameSite=Lax` for Light or Dark; `max-age=0` for System) and immediately synchronizes the `data-theme` attribute on `document.documentElement` to prevent any flash on load.
+
+### Admin area
+The administration area provides a read-only view of users, projects, and platform activity metrics. Access is restricted using the `requireAdmin` helper, which executes inside the admin layout and within each admin page component. Admin access is determined strictly by verifying the user email against the comma-separated `ADMIN_EMAILS` environment variable; no administrator roles or flags are stored in the database. Unauthorized users and unauthenticated requests trigger a `404 Not Found` response. The admin queries only retrieve user names, emails, and timestamps, and `passwordHash` is never selected or queried.
+
 ### Input validation
 All incoming request payloads are parsed and validated using Zod schemas in `src/lib/validators.ts`. Fields outside the schema are stripped, preventing unwanted property injection. Route handlers reject malformed payloads with descriptive 400 Bad Request responses before querying database models.
 
@@ -158,6 +170,9 @@ projectflow/
 │   └── seed.ts                 # Database seeding and cleanup script
 ├── src/
 │   ├── app/
+│   │   ├── (admin)/            # Protected read-only admin interface
+│   │   │   ├── admin/          # Overview, users, and projects views
+│   │   │   └── layout.tsx
 │   │   ├── (app)/              # Authenticated app shell layout and routes
 │   │   │   ├── layout.tsx
 │   │   │   └── projects/       # Projects list and board pages
@@ -170,14 +185,15 @@ projectflow/
 │   │   │   ├── notifications/  # Notification retrieval and mark-read
 │   │   │   ├── projects/       # Project CRUD and member management
 │   │   │   └── tasks/          # Task update, delete, and comment endpoints
-│   │   ├── globals.css         # Tailwind tokens and base styling
-│   │   ├── layout.tsx          # Root HTML layout with font setup
+│   │   ├── globals.css         # Tailwind tokens, CSS variables, and theme queries
+│   │   ├── layout.tsx          # Root HTML layout with self-hosted font and cookie theme
 │   │   └── page.tsx            # Public landing page
 │   ├── components/
 │   │   ├── dashboard/          # Custom SVG charts and metrics cards
 │   │   ├── landing/            # Public landing page components
 │   │   ├── ui/                 # Reusable UI primitives (Button, Dialog, etc.)
 │   │   ├── AppHeader.tsx       # Application top navigation
+│   │   ├── Avatar.tsx          # User avatar initials component
 │   │   ├── BoardColumn.tsx     # Kanban board column container
 │   │   ├── FilterBar.tsx       # Search and filter toolbar
 │   │   ├── MembersDialog.tsx   # Project member management dialog
@@ -188,9 +204,17 @@ projectflow/
 │   │   ├── ProjectModals.tsx   # Modals for new tasks and project settings
 │   │   ├── RealtimeProvider.tsx# Ably client connection manager
 │   │   ├── TaskCard.tsx        # Draggable task card item
-│   │   └── TaskDialog.tsx      # Task details view and comment thread
+│   │   ├── TaskDialog.tsx      # Task details view and comment thread
+│   │   ├── ThemeToggle.tsx     # System, Light, and Dark mode theme toggle
+│   │   └── UserContext.tsx     # Current user React context
+│   ├── fonts/                  # Self-hosted IBM Plex Sans WOFF2 font files
+│   │   ├── ibm-plex-sans-latin-400-normal.woff2
+│   │   ├── ibm-plex-sans-latin-500-normal.woff2
+│   │   ├── ibm-plex-sans-latin-600-normal.woff2
+│   │   └── LICENSE
 │   ├── lib/
 │   │   ├── access.ts           # Project membership check helpers
+│   │   ├── admin.ts            # Admin email verification and layout guard
 │   │   ├── api.ts              # Client-side fetch wrapper
 │   │   ├── auth.ts             # Auth cookie helpers and token generation
 │   │   ├── db.ts               # Cached Mongoose connection manager
@@ -214,6 +238,7 @@ projectflow/
 ├── eslint.config.mjs           # ESLint configuration
 ├── next.config.ts              # Next.js configuration
 ├── package.json                # Project dependencies and scripts
+├── postcss.config.mjs          # PostCSS configuration with Tailwind CSS plugin
 └── tsconfig.json               # TypeScript configuration
 ```
 
@@ -244,6 +269,7 @@ Configure the following variables in `.env`:
 | `MONGODB_URI` | Yes | MongoDB connection string (e.g. `mongodb://localhost:27017/projectflow`) |
 | `JWT_SECRET` | Yes | Secret key used to sign and verify JSON Web Tokens |
 | `ABLY_API_KEY` | Optional | Ably API key for real-time WebSockets and presence |
+| `ADMIN_EMAILS` | Optional | Comma-separated list of admin emails (empty means no admin) |
 
 Generate a cryptographically secure value for `JWT_SECRET`:
 ```bash
@@ -327,6 +353,8 @@ npm run build
 - **Fixed-window rate limiting**: Requests made right before the window reset can allow a burst of traffic at window boundaries.
 - **No email notifications**: Notifications are delivered exclusively in-app via WebSockets and database records; no external email service is integrated.
 - **No file attachments**: Tasks and comments support text only; file upload and attachment storage are not implemented.
+- **Read-only administration**: The admin area is strictly read-only for monitoring platform activity; administrative editing, user bans, or record modifications are not supported.
+- **Demo accounts are not admins**: The seeded demo accounts do not have admin access unless their emails are explicitly added to `ADMIN_EMAILS`.
 
 ## Author
 
