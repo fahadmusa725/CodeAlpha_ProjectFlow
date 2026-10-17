@@ -9,7 +9,7 @@ A collaborative project and task management application with real-time updates a
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?style=flat)
 ![Ably](https://img.shields.io/badge/Ably-2.29.0-orange?style=flat)
 
-**Live demo:** https://code-alpha-project-flow.vercel.app
+**Live demo:** [https://code-alpha-project-flow.vercel.app](https://fahad-projectflow.vercel.app/)
 
 ## Overview
 
