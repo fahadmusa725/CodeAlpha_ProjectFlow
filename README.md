@@ -92,12 +92,54 @@ npm run seed
 
 ## Screenshots
 
-| View | Screenshot |
-| --- | --- |
-| **Kanban Board**<br>Live columns with drag-and-drop cards and active presence indicators. | ![ProjectFlow Kanban Board](./public/screens/board.png) |
-| **Project Dashboard**<br>Custom SVG charts showing completion trends, overdue tasks, and workload. | ![ProjectFlow Project Dashboard](./public/screens/dashboard.png) |
-| **Task Details**<br>Modal for task priority, labels, assignee, due date, and team discussion. | ![ProjectFlow Task Dialog](./public/screens/task.png) |
-| **Mobile Interface**<br>Responsive board interface adapted for phone screens. | ![ProjectFlow Mobile Layout](./public/screens/mobile.png) |
+The screenshots show the seeded demo data populated by `npm run seed`.
+
+<table>
+  <thead>
+    <tr>
+      <th align="center">Landing page</th>
+      <th align="center">Projects</th>
+      <th align="center">Board</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center"><img src="docs/screenshots/landing.png" alt="Public landing page introducing features and authentication entry points" width="280" /></td>
+      <td align="center"><img src="docs/screenshots/projects.png" alt="Workspace projects list with progress bar and member badges" width="280" /></td>
+      <td align="center"><img src="docs/screenshots/board.png" alt="Kanban board with columns for To do, In progress, and Done tasks" width="280" /></td>
+    </tr>
+    <tr>
+      <th align="center">Task details</th>
+      <th align="center">Dashboard</th>
+      <th align="center">Notifications</th>
+    </tr>
+    <tr>
+      <td align="center"><img src="docs/screenshots/task.png" alt="Task details modal with metadata fields and comment thread" width="280" /></td>
+      <td align="center"><img src="docs/screenshots/dashboard.png" alt="Project delivery metrics dashboard with task breakdown and SVG charts" width="280" /></td>
+      <td align="center"><img src="docs/screenshots/notifications.png" alt="In-app notifications dropdown panel displaying recent activity" width="280" /></td>
+    </tr>
+    <tr>
+      <th align="center">Members</th>
+      <th align="center">Filters</th>
+      <th align="center">Admin overview</th>
+    </tr>
+    <tr>
+      <td align="center"><img src="docs/screenshots/members.png" alt="Project members dialog showing roles and email invitation field" width="280" /></td>
+      <td align="center"><img src="docs/screenshots/filters.png" alt="Filtered board view by label with search and filter bar" width="280" /></td>
+      <td align="center"><img src="docs/screenshots/admin.png" alt="Read-only admin overview displaying system metrics and registration activity" width="280" /></td>
+    </tr>
+    <tr>
+      <th align="center">Dark board</th>
+      <th align="center">Dark dashboard</th>
+      <th align="center">Phone</th>
+    </tr>
+    <tr>
+      <td align="center"><img src="docs/screenshots/dark-board.png" alt="Kanban board displayed in dark mode" width="280" /></td>
+      <td align="center"><img src="docs/screenshots/dark-dashboard.png" alt="Project metrics dashboard displayed in dark mode" width="280" /></td>
+      <td align="center"><img src="docs/screenshots/mobile-board.png" alt="Mobile viewport rendering of the kanban board" width="280" /></td>
+    </tr>
+  </tbody>
+</table>
 
 ## Tech stack
 
