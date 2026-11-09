@@ -171,3 +171,24 @@ body {
   scrollbar-color: var(--border) transparent;
 }
 
+/* Landing page screenshot theme switching */
+.screen-dark {
+  display: none;
+}
+
+:root[data-theme="dark"] .screen-light {
+  display: none;
+}
+:root[data-theme="dark"] .screen-dark {
+  display: block;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .screen-light {
+    display: none;
+  }
+  :root:not([data-theme]) .screen-dark {
+    display: block;
+  }
+}
+

@@ -46,14 +46,26 @@ export function LandingAlsoIncluded() {
 
           <div className="flex justify-center">
             <div className="rounded-[6px] border border-border bg-surface p-1 sm:p-2 overflow-hidden max-w-[280px] w-full">
-              <Image
-                src="/screens/mobile.png"
-                alt="ProjectFlow mobile interface showing responsive project board on a phone screen"
-                width={1179}
-                height={2556}
-                sizes="(max-width: 768px) 280px, 280px"
-                className="w-full h-auto rounded-[4px] block"
-              />
+              <div className="screen-light">
+                <Image
+                  src="/screens/mobile.png"
+                  alt="ProjectFlow mobile interface showing responsive project board on a phone screen"
+                  width={1179}
+                  height={2556}
+                  sizes="(max-width: 768px) 280px, 280px"
+                  className="w-full h-auto rounded-[4px] block"
+                />
+              </div>
+              <div className="screen-dark">
+                <Image
+                  src="/screens/mobile-dark.png"
+                  alt="ProjectFlow mobile interface showing responsive project board on a phone screen"
+                  width={780}
+                  height={1687}
+                  sizes="(max-width: 768px) 280px, 280px"
+                  className="w-full h-auto rounded-[4px] block"
+                />
+              </div>
             </div>
           </div>
         </div>

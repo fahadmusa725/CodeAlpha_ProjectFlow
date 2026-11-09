@@ -29,15 +29,27 @@ export function LandingHero() {
         </div>
 
         <div className="mt-10 sm:mt-12 rounded-[6px] border border-border bg-surface p-1 sm:p-2 overflow-hidden">
-          <Image
-            src="/screens/board.png"
-            alt="ProjectFlow kanban board showing columns for Todo, In Progress, Review, and Done with task cards"
-            width={2560}
-            height={1600}
-            priority
-            sizes="(max-width: 1100px) 100vw, 1100px"
-            className="w-full h-auto rounded-[4px] block"
-          />
+          <div className="screen-light">
+            <Image
+              src="/screens/board.png"
+              alt="ProjectFlow kanban board showing columns for Todo, In Progress, Review, and Done with task cards"
+              width={2880}
+              height={1800}
+              priority
+              sizes="(max-width: 1100px) 100vw, 1100px"
+              className="w-full h-auto rounded-[4px] block"
+            />
+          </div>
+          <div className="screen-dark">
+            <Image
+              src="/screens/board-dark.png"
+              alt="ProjectFlow kanban board showing columns for Todo, In Progress, Review, and Done with task cards"
+              width={1440}
+              height={900}
+              sizes="(max-width: 1100px) 100vw, 1100px"
+              className="w-full h-auto rounded-[4px] block"
+            />
+          </div>
         </div>
       </div>
     </section>
