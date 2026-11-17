@@ -6,6 +6,7 @@ import "@/models/Task";
 import "@/models/Comment";
 import "@/models/Notification";
 import "@/models/RateLimit";
+import "@/models/PasswordReset";
 
 interface MongooseCache {
   conn: typeof mongoose | null;

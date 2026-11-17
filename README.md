@@ -40,6 +40,7 @@ npm run seed
 
 ### Accounts and security
 - User registration and login with email and password
+- Forgot password and reset password by email
 - Passwords hashed using bcrypt (cost factor 10)
 - Stateless authentication using JWT tokens stored in httpOnly, SameSite cookies
 - Fixed-window rate limiting on login and registration backed by MongoDB
@@ -67,6 +68,7 @@ npm run seed
 
 ### Notifications
 - In-app alerts for task assignment, comments, and project invitations
+- Email notification sent to user when a task is assigned to them
 - Notification bell badge with unread count indicator
 - Mark individual notifications as read or mark all as read
 - Real-time notification delivery via dedicated user channels
@@ -173,6 +175,9 @@ The screenshots show the seeded demo data populated by `npm run seed`.
 ### Authentication
 Authentication relies on JSON Web Tokens (JWT) signed with HMAC-SHA256. Upon successful login or registration, the token is written to an `httpOnly`, `SameSite=lax` cookie named `token`. In production, the cookie is marked `secure`. Every incoming request passes through `src/proxy.ts`, which extracts and verifies the token. If an unauthenticated user attempts to access a protected route, the proxy redirects them to `/login?from=<pathname>`. Logged-in users attempting to access `/`, `/login`, or `/register` are redirected to `/projects`.
 
+### Password reset
+Users can request a password reset from `/forgot-password`. If configured, a cryptographically random single-use token (valid for 30 minutes) is generated, its SHA-256 hash is saved in MongoDB, and a reset link is sent via email. To prevent email enumeration, the endpoint always returns the same generic 200 response regardless of whether the email exists. Submissions are rate limited by both IP address and hashed email. When the reset link is submitted at `/reset-password`, the token is consumed atomically, the new password is hashed with bcrypt, and all existing reset records for that user are deleted.
+
 ### Authorization
 All route handlers perform server-side verification before executing database queries. The system inspects project membership for every operation. If the requesting user is not a member of the project containing the target entity, the route responds with `404 Not Found` rather than `403 Forbidden` to prevent project enumeration. Administrative operations (renaming a project, adding members, removing members, or deleting a project) enforce the `owner` role check.
 
@@ -183,7 +188,7 @@ Cards within a column maintain a floating-point `order` number. Moving a card ca
 Real-time messaging uses Ably WebSockets. State changes are published from server route handlers only after the database write succeeds. Clients request short-lived (15 minutes) subscribe-only Ably token requests via `/api/ably/token`. Token capabilities restrict users strictly to subscribing to their accessible project channels (`project:<id>`) and their private notification channel (`user:<userId>`). Board channels include presence tracking so members can view who is viewing the board concurrently.
 
 ### Notifications
-When a task is assigned, a comment is posted, or a user is added to a project, the server creates records in the `Notification` MongoDB collection and publishes a message to `user:<userId>` on Ably. The client `NotificationsProvider` listens on this channel to increment the unread count badge and append alerts in real time.
+When a task is assigned, a comment is posted, or a user is added to a project, the server creates records in the `Notification` MongoDB collection and publishes a message to `user:<userId>` on Ably. The client `NotificationsProvider` listens on this channel to increment the unread count badge and append alerts in real time. In addition, when mail is configured, task assignments trigger an email notification to the assignee with a deep link to the task.
 
 ### Rate limiting
 Because serverless functions run across isolated ephemeral instances without shared memory, rate limiting is backed by MongoDB via the `RateLimit` collection. Each check performs an atomic `findOneAndUpdate` with `upsert: true` on fixed time windows. If a window document exists and has not expired, its hit counter increments; otherwise, a new window document is created. A unique index on the key prevents race conditions, and a MongoDB TTL index on `expiresAt` automatically cleans up expired counters. If database access fails, the limiter fails open and logs the issue so legitimate users are not locked out.
@@ -312,6 +317,9 @@ Configure the following variables in `.env`:
 | `JWT_SECRET` | Yes | Secret key used to sign and verify JSON Web Tokens |
 | `ABLY_API_KEY` | Optional | Ably API key for real-time WebSockets and presence |
 | `ADMIN_EMAILS` | Optional | Comma-separated list of admin emails (empty means no admin) |
+| `SMTP_USER` | Optional | Gmail address used for sending transactional emails |
+| `SMTP_PASS` | Optional | Gmail app password for the SMTP user |
+| `APP_URL` | Optional | Public base URL without trailing slash (e.g. http://localhost:3000) |
 
 Generate a cryptographically secure value for `JWT_SECRET`:
 ```bash
@@ -362,6 +370,8 @@ npm run build
 | `POST` | `/api/auth/register` | Public | Register a new user account |
 | `POST` | `/api/auth/login` | Public | Authenticate user and issue JWT cookie |
 | `POST` | `/api/auth/logout` | Authenticated | Clear authentication cookie |
+| `POST` | `/api/auth/forgot-password` | Public | Request a single-use password reset link via email |
+| `POST` | `/api/auth/reset-password` | Public | Set new password with verified reset token |
 | `GET` | `/api/auth/me` | Authenticated | Retrieve current user profile |
 | `GET` | `/api/projects` | Authenticated | List all projects the user is a member of |
 | `POST` | `/api/projects` | Authenticated | Create a new project |
@@ -393,7 +403,8 @@ npm run build
 
 - **Revocation delay in real-time channel**: A removed project member continues receiving real-time events until their Ably token expires (maximum 15 minutes), after which token renewal is rejected by the server.
 - **Fixed-window rate limiting**: Requests made right before the window reset can allow a burst of traffic at window boundaries.
-- **No email notifications**: Notifications are delivered exclusively in-app via WebSockets and database records; no external email service is integrated.
+- **Existing sessions after password reset**: Existing sessions remain valid after a password reset until their JWT cookie expires, as tokens are stateless.
+- **Email notifications scope**: Only task assignment sends email; comments and project invitations remain strictly in-app notifications.
 - **No file attachments**: Tasks and comments support text only; file upload and attachment storage are not implemented.
 - **Read-only administration**: The admin area is strictly read-only for monitoring platform activity; administrative editing, user bans, or record modifications are not supported.
 - **Demo accounts are not admins**: The seeded demo accounts do not have admin access unless their emails are explicitly added to `ADMIN_EMAILS`.

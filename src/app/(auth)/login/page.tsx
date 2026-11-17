@@ -96,15 +96,25 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
           autoComplete="email"
         />
 
-        <TextField
-          id="password"
-          label="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          error={fieldErrors.password}
-          autoComplete="current-password"
-        />
+        <div>
+          <TextField
+            id="password"
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            error={fieldErrors.password}
+            autoComplete="current-password"
+          />
+          <div className="flex justify-end mt-1.5">
+            <Link
+              href="/forgot-password"
+              className="text-xs text-accent hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
+        </div>
 
         <Button type="submit" isLoading={isLoading} className="w-full mt-1">
           Sign in
