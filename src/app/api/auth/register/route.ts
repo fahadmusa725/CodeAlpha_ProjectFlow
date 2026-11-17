@@ -5,6 +5,7 @@ import { User } from "@/models/User";
 import { registerSchema } from "@/lib/validators";
 import { signToken, setAuthCookie } from "@/lib/auth";
 import { hit, getClientIp, tooManyRequests } from "@/lib/rate-limit";
+import { findValidInviteByRawToken, acceptInvite } from "@/lib/invites";
 
 export async function POST(req: Request) {
   try {
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
       return tooManyRequests(ipLimit.retryAfterSeconds);
     }
 
-    const { name, email, password } = parsed.data;
+    const { name, email, password, inviteToken } = parsed.data;
 
     await connectToDatabase();
 
@@ -38,13 +39,31 @@ export async function POST(req: Request) {
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await User.create({ name, email, passwordHash });
 
+    let joinedProject: string | undefined;
+
+    if (inviteToken) {
+      try {
+        const invite = await findValidInviteByRawToken(inviteToken);
+        if (invite && invite.email.toLowerCase() === email.toLowerCase()) {
+          joinedProject = await acceptInvite(invite, user);
+        }
+      } catch (err) {
+        console.error("Failed to accept invite during registration:", err);
+      }
+    }
+
     const token = await signToken({ userId: user._id.toString(), email: user.email });
     await setAuthCookie(token);
 
-    return NextResponse.json(
-      { user: { id: user._id.toString(), name: user.name, email: user.email } },
-      { status: 201 }
-    );
+    const responseBody: { user: { id: string; name: string; email: string }; joinedProject?: string } = {
+      user: { id: user._id.toString(), name: user.name, email: user.email },
+    };
+
+    if (joinedProject) {
+      responseBody.joinedProject = joinedProject;
+    }
+
+    return NextResponse.json(responseBody, { status: 201 });
   } catch (error: unknown) {
     if (
       typeof error === "object" &&

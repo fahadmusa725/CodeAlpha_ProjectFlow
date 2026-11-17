@@ -68,6 +68,51 @@ async function sendAssignmentEmail(item: CreateNotificationItem): Promise<void> 
   }
 }
 
+async function sendAddedToProjectEmail(item: CreateNotificationItem): Promise<void> {
+  if (!isMailConfigured()) return;
+
+  try {
+    const recipientUser = await User.findById(item.user).select("email name");
+    if (!recipientUser || !recipientUser.email) return;
+
+    if (recipientUser.email.endsWith("@projectflow.demo")) return;
+
+    // Per-recipient throttle: "mail:added:<hash of recipient id>" max 10 per hour
+    const recipientIdHash = hashKeyPart(item.user);
+    const throttleLimit = await hit(`mail:added:${recipientIdHash}`, 10, 60 * 60 * 1000);
+    if (throttleLimit.limited) return;
+
+    let projectName = item.targetTitle || "Project";
+    try {
+      const projectDoc = await Project.findById(item.project).select("name");
+      if (projectDoc?.name) {
+        projectName = projectDoc.name;
+      }
+    } catch {
+      // keep fallback
+    }
+
+    const appUrl = (process.env.APP_URL || "").trim().replace(/\/+$/, "");
+    const projectLink = `${appUrl}/projects/${item.project}`;
+
+    const actorNameTruncated = truncate(item.actorName, 60);
+    const projectNameTruncated = truncate(projectName, 60);
+
+    const subject = `${actorNameTruncated} added you to ${projectNameTruncated}`;
+    const text = `Hello ${recipientUser.name},\n\n${item.actorName} added you to the project "${projectNameTruncated}".\n\nView the project here:\n${projectLink}\n\nProjectFlow Team`;
+    const html = `<p>Hello ${escapeHtml(recipientUser.name)},</p><p><strong>${escapeHtml(item.actorName)}</strong> added you to the project &ldquo;<strong>${escapeHtml(projectNameTruncated)}</strong>&rdquo;.</p><p><a href="${projectLink}">View Project</a></p><p>&mdash;<br>ProjectFlow Team</p>`;
+
+    await sendMail({
+      to: recipientUser.email,
+      subject,
+      text,
+      html,
+    });
+  } catch (err) {
+    console.error("Added to project email error:", err instanceof Error ? err.message : "Unknown error");
+  }
+}
+
 export async function createNotifications(items: CreateNotificationItem[]): Promise<void> {
   if (!items || items.length === 0) return;
 
@@ -121,10 +166,15 @@ export async function createNotifications(items: CreateNotificationItem[]): Prom
     }
 
     const assignedItems = items.filter((it) => it.type === "assigned" && it.task);
-    if (assignedItems.length > 0 && isMailConfigured()) {
+    const addedItems = items.filter((it) => it.type === "added_to_project");
+
+    if ((assignedItems.length > 0 || addedItems.length > 0) && isMailConfigured()) {
       after(async () => {
         for (const assignedItem of assignedItems) {
           await sendAssignmentEmail(assignedItem);
+        }
+        for (const addedItem of addedItems) {
+          await sendAddedToProjectEmail(addedItem);
         }
       });
     }

@@ -126,3 +126,14 @@ export interface NotificationsListResponse {
   unreadCount: number;
 }
 
+export interface Invite {
+  _id: string;
+  email: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface InvitesListResponse {
+  invites: Invite[];
+}
+

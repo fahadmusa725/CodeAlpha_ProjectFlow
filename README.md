@@ -49,8 +49,10 @@ npm run seed
 ### Projects and roles
 - Create, rename, and delete projects
 - Role-based project permissions: Owner and Member
-- Project owners can add members by email and remove members
-- Deleting a project cascades deletion across tasks, comments, and notifications
+- Project owners can add registered members directly by email or invite new users without an account (invitation link valid for 7 days)
+- Manage and revoke pending project invitations
+- Project owners can remove members
+- Deleting a project cascades deletion across tasks, comments, notifications, and pending invitations
 
 ### Board and tasks
 - Kanban board with columns: Todo, In Progress, and Done
@@ -177,6 +179,9 @@ Authentication relies on JSON Web Tokens (JWT) signed with HMAC-SHA256. Upon suc
 
 ### Password reset
 Users can request a password reset from `/forgot-password`. If configured, a cryptographically random single-use token (valid for 30 minutes) is generated, its SHA-256 hash is saved in MongoDB, and a reset link is sent via email. To prevent email enumeration, the endpoint always returns the same generic 200 response regardless of whether the email exists. Submissions are rate limited by both IP address and hashed email. When the reset link is submitted at `/reset-password`, the token is consumed atomically, the new password is hashed with bcrypt, and all existing reset records for that user are deleted.
+
+### Project invitations
+Project owners can invite new team members who do not yet have an account. When invited, a single-use token valid for 7 days is generated and its SHA-256 hash is stored in MongoDB. An email containing an invitation link is sent to the specified address. Joining is bound strictly to the invited email address and requires following the secret emailed link. Because this flow triggers outgoing emails to arbitrary addresses, it is rate limited across owner ID, recipient email, and IP address. When accepted, the invite is marked used atomically and the user is added to the project.
 
 ### Authorization
 All route handlers perform server-side verification before executing database queries. The system inspects project membership for every operation. If the requesting user is not a member of the project containing the target entity, the route responds with `404 Not Found` rather than `403 Forbidden` to prevent project enumeration. Administrative operations (renaming a project, adding members, removing members, or deleting a project) enforce the `owner` role check.
@@ -378,8 +383,11 @@ npm run build
 | `GET` | `/api/projects/[id]` | Member | Get project details, members, and stats |
 | `PATCH` | `/api/projects/[id]` | Owner | Update project name or description |
 | `DELETE` | `/api/projects/[id]` | Owner | Delete project and associated records |
-| `POST` | `/api/projects/[id]/members` | Owner | Add a registered user as a project member |
+| `POST` | `/api/projects/[id]/members` | Owner | Add a registered user as member, or send email invitation |
 | `DELETE` | `/api/projects/[id]/members/[userId]` | Owner | Remove a member from the project |
+| `GET` | `/api/projects/[id]/invites` | Owner | List pending invitations for a project |
+| `DELETE` | `/api/projects/[id]/invites/[inviteId]` | Owner | Revoke a pending project invitation |
+| `POST` | `/api/invites/accept` | Authenticated | Accept a project invitation via token |
 | `GET` | `/api/projects/[id]/tasks` | Member | List all tasks belonging to a project |
 | `POST` | `/api/projects/[id]/tasks` | Member | Create a new task in a project |
 | `PATCH` | `/api/tasks/[id]` | Member | Update task title, status, order, assignee, or dates |
@@ -404,7 +412,9 @@ npm run build
 - **Revocation delay in real-time channel**: A removed project member continues receiving real-time events until their Ably token expires (maximum 15 minutes), after which token renewal is rejected by the server.
 - **Fixed-window rate limiting**: Requests made right before the window reset can allow a burst of traffic at window boundaries.
 - **Existing sessions after password reset**: Existing sessions remain valid after a password reset until their JWT cookie expires, as tokens are stateless.
-- **Email notifications scope**: Only task assignment sends email; comments and project invitations remain strictly in-app notifications.
+- **Email notifications scope**: Outgoing email is sent for password reset, task assignment, being added to a project, and project invitations; comments remain in-app notifications.
+- **Email verification**: User accounts are not email verified, which is why project invitations are bound to a secret link rather than automatically matched by email address alone.
+- **Invitation expiration**: Project invitations expire after 7 days.
 - **No file attachments**: Tasks and comments support text only; file upload and attachment storage are not implemented.
 - **Read-only administration**: The admin area is strictly read-only for monitoring platform activity; administrative editing, user bans, or record modifications are not supported.
 - **Demo accounts are not admins**: The seeded demo accounts do not have admin access unless their emails are explicitly added to `ADMIN_EMAILS`.

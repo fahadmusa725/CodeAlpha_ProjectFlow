@@ -21,6 +21,9 @@ function isPublic(pathname: string): boolean {
   if (pathname.startsWith("/screens/")) {
     return true;
   }
+  if (pathname === "/invite" || pathname.startsWith("/invite/")) {
+    return true;
+  }
   return publicRoutes.some(
     (route) => pathname === route || pathname.startsWith(route + "/")
   );

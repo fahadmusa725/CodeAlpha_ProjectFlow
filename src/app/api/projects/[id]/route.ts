@@ -89,6 +89,8 @@ export async function DELETE(_req: Request, { params }: Params) {
     await Comment.deleteMany({ task: { $in: taskIds } });
     await Task.deleteMany({ project: id });
     await Notification.deleteMany({ project: id });
+    const { Invite } = await import("@/models/Invite");
+    await Invite.deleteMany({ project: id });
     await Project.findByIdAndDelete(id);
 
     const payload = await getCurrentUser();
