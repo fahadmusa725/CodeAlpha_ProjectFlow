@@ -12,6 +12,7 @@ interface NotificationsContextType {
   unreadCount: number;
   isLoading: boolean;
   isError: boolean;
+  projectsVersion: number;
   refetch: () => Promise<void>;
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
@@ -22,6 +23,7 @@ const NotificationsContext = createContext<NotificationsContextType>({
   unreadCount: 0,
   isLoading: true,
   isError: false,
+  projectsVersion: 0,
   refetch: async () => {},
   markAsRead: async () => {},
   markAllAsRead: async () => {},
@@ -35,6 +37,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isError, setIsError] = useState<boolean>(false);
+  const [projectsVersion, setProjectsVersion] = useState<number>(0);
 
   const isMountedRef = useRef<boolean>(true);
   const prevConnectionStateRef = useRef<string>(connectionState);
@@ -80,7 +83,11 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       connectionState === "connected" &&
       (prevState === "disconnected" || prevState === "suspended" || prevState === "connecting")
     ) {
-      fetchNotifications();
+      fetchNotifications().then(() => {
+        if (isMountedRef.current) {
+          setProjectsVersion((v) => v + 1);
+        }
+      });
     }
   }, [connectionState, fetchNotifications]);
 
@@ -111,6 +118,10 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
 
       if (!newItem.read) {
         setUnreadCount((count) => count + 1);
+      }
+
+      if (newItem.type === "added_to_project") {
+        setProjectsVersion((v) => v + 1);
       }
     };
 
@@ -165,6 +176,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         unreadCount,
         isLoading,
         isError,
+        projectsVersion,
         refetch: fetchNotifications,
         markAsRead,
         markAllAsRead,

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -11,13 +11,17 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { Button, TextField, Dialog, Spinner } from "@/components/ui";
 import { Avatar } from "@/components/Avatar";
+import { useNotifications } from "@/components/NotificationsProvider";
 import { apiFetch, ApiError } from "@/lib/api";
 import type { ProjectsListResponse, ProjectDetailResponse, Project } from "@/types";
 
 export default function ProjectsPage() {
+  const { projectsVersion } = useNotifications();
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const isInitialMountRef = useRef(true);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
@@ -66,6 +70,28 @@ export default function ProjectsPage() {
       ignore = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+
+    let ignore = false;
+    apiFetch<ProjectsListResponse>("/api/projects")
+      .then((data) => {
+        if (!ignore && data?.projects) {
+          setProjects(data.projects);
+        }
+      })
+      .catch(() => {
+        // Keep existing list on background refetch failure
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [projectsVersion]);
 
   const handleOpenDialog = () => {
     setNewProjectName("");
