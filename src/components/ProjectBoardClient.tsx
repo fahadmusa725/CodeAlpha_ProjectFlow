@@ -104,6 +104,7 @@ export function ProjectBoardClient({ projectId }: ProjectBoardClientProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
+  const [membersVersion, setMembersVersion] = useState<number>(0);
 
   const { connectionState, getChannel, reauthorize } = useRealtime();
 
@@ -171,8 +172,13 @@ export function ProjectBoardClient({ projectId }: ProjectBoardClientProps) {
   // Function to apply incoming realtime events
   const applyRealtimeEvent = useCallback(
     (eventName: string, data: Record<string, unknown>) => {
-      if (!data || data.actorId === user?.id && eventName !== "presence.update") {
-        // Echo from current user (except when presence updating) - ignore
+      if (
+        !data ||
+        (data.actorId === user?.id &&
+          eventName !== "presence.update" &&
+          eventName !== "member.added")
+      ) {
+        // Echo from current user (except when presence updating or member.added) - ignore
         if (data?.actorId === user?.id) return;
       }
 
@@ -248,6 +254,7 @@ export function ProjectBoardClient({ projectId }: ProjectBoardClientProps) {
         }
 
         case "member.added": {
+          setMembersVersion((v) => v + 1);
           if (data.member) {
             const newMember = data.member as Project["members"][number];
             setProject((prev) => {
@@ -260,6 +267,7 @@ export function ProjectBoardClient({ projectId }: ProjectBoardClientProps) {
         }
 
         case "member.removed": {
+          setMembersVersion((v) => v + 1);
           if (data.userId && typeof data.userId === "string") {
             const removedUserId = data.userId;
             if (removedUserId === user?.id) {
@@ -828,6 +836,7 @@ export function ProjectBoardClient({ projectId }: ProjectBoardClientProps) {
         onMemberRemoved={refetchTasks}
         connectionState={connectionState}
         presenceUsers={presenceUsers}
+        membersVersion={membersVersion}
       />
 
       {/* View Switch Tabs */}

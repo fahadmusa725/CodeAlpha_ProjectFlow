@@ -15,6 +15,7 @@ interface MembersDialogProps {
   isOwner: boolean;
   onProjectUpdated: (updatedProject: Project) => void;
   onMemberRemoved: () => void;
+  membersVersion?: number;
 }
 
 export function MembersDialog({
@@ -24,6 +25,7 @@ export function MembersDialog({
   isOwner,
   onProjectUpdated,
   onMemberRemoved,
+  membersVersion = 0,
 }: MembersDialogProps) {
   const [emailToAdd, setEmailToAdd] = useState("");
   const [isAdding, setIsAdding] = useState(false);
@@ -79,7 +81,7 @@ export function MembersDialog({
     return () => {
       ignore = true;
     };
-  }, [isOpen, isOwner, project._id]);
+  }, [isOpen, isOwner, project._id, membersVersion]);
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();

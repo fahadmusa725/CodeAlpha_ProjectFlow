@@ -125,6 +125,11 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       }
     };
 
+    const handleProjectsChanged = () => {
+      if (isCancelled) return;
+      setProjectsVersion((v) => v + 1);
+    };
+
     channel
       .subscribe("notification.created", handleNotificationCreated)
       .catch((err: unknown) => {
@@ -137,9 +142,22 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         }
       });
 
+    channel
+      .subscribe("projects.changed", handleProjectsChanged)
+      .catch((err: unknown) => {
+        if (isCancelled) return;
+        if (process.env.NODE_ENV !== "production") {
+          console.warn(
+            "[NotificationsProvider] user channel subscribe projects.changed failed:",
+            err instanceof Error ? err.message : err
+          );
+        }
+      });
+
     return () => {
       isCancelled = true;
       channel.unsubscribe("notification.created", handleNotificationCreated);
+      channel.unsubscribe("projects.changed", handleProjectsChanged);
     };
   }, [user, realtimeClient, getChannel]);
 

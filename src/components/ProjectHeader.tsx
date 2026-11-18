@@ -22,6 +22,7 @@ interface ProjectHeaderProps {
   onMemberRemoved: () => void;
   connectionState?: string;
   presenceUsers?: PresenceUser[];
+  membersVersion?: number;
 }
 
 export function ProjectHeader({
@@ -31,6 +32,7 @@ export function ProjectHeader({
   onMemberRemoved,
   connectionState,
   presenceUsers = [],
+  membersVersion = 0,
 }: ProjectHeaderProps) {
   const [isMembersOpen, setIsMembersOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -183,6 +185,7 @@ export function ProjectHeader({
         isOwner={isOwner}
         onProjectUpdated={onProjectUpdated}
         onMemberRemoved={onMemberRemoved}
+        membersVersion={membersVersion}
       />
 
       {isOwner && (

@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import { connectToDatabase } from "@/lib/db";
 import { Invite, type IInvite } from "@/models/Invite";
 import { Project } from "@/models/Project";
-import { publishToProject } from "@/lib/realtime";
+import { publishToProject, publishToUser } from "@/lib/realtime";
 import type { IUser } from "@/models/User";
 
 export function hashToken(rawToken: string): string {
@@ -116,6 +116,12 @@ export async function acceptInvite(
         actorId: claimedInvite.invitedBy ? claimedInvite.invitedBy.toString() : "",
         member: addedMember,
       });
+
+      if (claimedInvite.invitedBy) {
+        await publishToUser(claimedInvite.invitedBy.toString(), "projects.changed", {
+          projectId: projectIdStr,
+        });
+      }
     } catch (err) {
       console.error("Realtime publish failed on invite acceptance:", err);
     }

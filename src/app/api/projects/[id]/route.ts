@@ -7,7 +7,7 @@ import { Notification } from "@/models/Notification";
 import { requireProjectAccess } from "@/lib/access";
 import { getCurrentUser } from "@/lib/auth";
 import { updateProjectSchema } from "@/lib/validators";
-import { publishToProject } from "@/lib/realtime";
+import { publishToProject, publishToUser } from "@/lib/realtime";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -62,6 +62,14 @@ export async function PATCH(req: Request, { params }: Params) {
         name: project.name,
         description: project.description,
       });
+
+      const actorUserId = payload?.userId || "";
+      for (const m of project.members) {
+        const memberUserId = m.user?._id ? m.user._id.toString() : m.user?.toString();
+        if (memberUserId && memberUserId !== actorUserId) {
+          await publishToUser(memberUserId, "projects.changed", { projectId: id });
+        }
+      }
     }
 
     return NextResponse.json({ project });
@@ -83,6 +91,11 @@ export async function DELETE(_req: Request, { params }: Params) {
   try {
     await connectToDatabase();
 
+    const actorUserId = access.project.owner ? access.project.owner.toString() : "";
+    const memberUserIds = access.project.members
+      .map((m) => (m.user ? m.user.toString() : ""))
+      .filter((uid) => uid && uid !== actorUserId);
+
     const tasks = await Task.find({ project: id }, "_id");
     const taskIds = tasks.map((t) => t._id);
 
@@ -97,6 +110,10 @@ export async function DELETE(_req: Request, { params }: Params) {
     await publishToProject(id, "project.deleted", {
       actorId: payload?.userId || "",
     });
+
+    for (const uid of memberUserIds) {
+      await publishToUser(uid, "projects.changed", { projectId: id });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

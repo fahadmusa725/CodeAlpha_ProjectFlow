@@ -3,7 +3,7 @@ import { connectToDatabase } from "@/lib/db";
 import mongoose from "mongoose";
 import { requireProjectAccess } from "@/lib/access";
 import { getCurrentUser } from "@/lib/auth";
-import { publishToProject } from "@/lib/realtime";
+import { publishToProject, publishToUser } from "@/lib/realtime";
 
 type Params = { params: Promise<{ id: string; userId: string }> };
 
@@ -41,6 +41,10 @@ export async function DELETE(_req: Request, { params }: Params) {
     await publishToProject(id, "member.removed", {
       actorId: payload?.userId || "",
       userId,
+    });
+
+    await publishToUser(userId, "projects.changed", {
+      projectId: id,
     });
 
     return NextResponse.json({ success: true });
