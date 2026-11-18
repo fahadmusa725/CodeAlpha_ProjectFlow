@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import mongoose from "mongoose";
 import { connectToDatabase } from "@/lib/db";
 import { Invite, type IInvite } from "@/models/Invite";
 import { Project } from "@/models/Project";
@@ -60,54 +61,69 @@ export async function findValidInviteByRawToken(
 
 export async function acceptInvite(
   invite: IInvite,
-  user: { _id: string | unknown; name?: string; email?: string } | IUser
-): Promise<string> {
+  user: { _id: string | mongoose.Types.ObjectId | unknown; name?: string; email?: string } | IUser
+): Promise<string | null> {
   await connectToDatabase();
 
-  const userIdStr = user._id ? user._id.toString() : "";
+  const userId = user._id as mongoose.Types.ObjectId | string;
   const now = new Date();
 
-  // Atomically mark the invite accepted
-  await Invite.findOneAndUpdate(
+  // Atomically claim the invite: only if acceptedAt is not set and not expired
+  const claimedInvite = await Invite.findOneAndUpdate(
     {
       _id: invite._id,
       acceptedAt: null,
+      expiresAt: { $gt: now },
     },
     { acceptedAt: now },
     { new: true }
   );
 
-  // If already accepted elsewhere concurrently, still ensure project membership
-  const projectIdStr = (invite.project?._id || invite.project).toString();
-
-  const project = await Project.findById(projectIdStr);
-  if (project) {
-    const isAlreadyMember = project.members.some(
-      (m) => m.user.toString() === userIdStr
-    );
-
-    if (!isAlreadyMember) {
-      project.members.push({
-        user: user._id as unknown as typeof project.members[0]["user"],
-        role: "member",
-      });
-      await project.save();
-
-      try {
-        const populated = await project.populate("members.user", "name email");
-        const addedMember = populated.members.find(
-          (m) => m.user._id.toString() === userIdStr
-        );
-
-        await publishToProject(projectIdStr, "member.added", {
-          actorId: invite.invitedBy ? invite.invitedBy.toString() : "",
-          member: addedMember,
-        });
-      } catch (err) {
-        console.error("Realtime publish failed on invite acceptance:", err);
-      }
-    }
+  // If already used or expired concurrently, return null
+  if (!claimedInvite) {
+    return null;
   }
 
-  return projectIdStr;
+  const projectId = claimedInvite.project;
+  const projectIdStr = projectId.toString();
+
+  try {
+    // Atomically add user if not already a member to prevent duplicates
+    await Project.updateOne(
+      {
+        _id: projectId,
+        "members.user": { $ne: userId as unknown as mongoose.Types.ObjectId },
+      },
+      {
+        $push: {
+          members: { user: userId as unknown as mongoose.Types.ObjectId, role: "member" },
+        },
+      }
+    );
+
+    // Keep realtime publish
+    try {
+      const addedMember = {
+        user: {
+          _id: userId ? userId.toString() : "",
+          name: user.name || "",
+          email: user.email || "",
+        },
+        role: "member" as const,
+      };
+
+      await publishToProject(projectIdStr, "member.added", {
+        actorId: claimedInvite.invitedBy ? claimedInvite.invitedBy.toString() : "",
+        member: addedMember,
+      });
+    } catch (err) {
+      console.error("Realtime publish failed on invite acceptance:", err);
+    }
+
+    return projectIdStr;
+  } catch (err) {
+    // Roll back acceptedAt so link still works
+    await Invite.updateOne({ _id: claimedInvite._id }, { acceptedAt: null });
+    throw err;
+  }
 }

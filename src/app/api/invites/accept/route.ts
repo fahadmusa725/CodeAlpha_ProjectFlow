@@ -48,6 +48,9 @@ export async function POST(req: Request) {
     }
 
     const projectId = await acceptInvite(invite, user);
+    if (!projectId) {
+      return NextResponse.json({ error: INVALID_INVITE_ERROR }, { status: 400 });
+    }
 
     return NextResponse.json({ projectId }, { status: 200 });
   } catch (error) {

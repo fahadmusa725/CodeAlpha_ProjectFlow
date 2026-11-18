@@ -45,7 +45,10 @@ export async function POST(req: Request) {
       try {
         const invite = await findValidInviteByRawToken(inviteToken);
         if (invite && invite.email.toLowerCase() === email.toLowerCase()) {
-          joinedProject = await acceptInvite(invite, user);
+          const res = await acceptInvite(invite, user);
+          if (res) {
+            joinedProject = res;
+          }
         }
       } catch (err) {
         console.error("Failed to accept invite during registration:", err);
